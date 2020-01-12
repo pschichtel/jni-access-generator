@@ -31,6 +31,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 
 public class JNIAccessProcessor extends AbstractProcessor {
@@ -206,30 +207,40 @@ public class JNIAccessProcessor extends AbstractProcessor {
         return out.toString();
     }
 
+    private String generateParameterList(ExecutableElement executable) {
+        StringBuilder out = new StringBuilder();
+        Iterator<? extends VariableElement> it = executable.getParameters().iterator();
+        if (it.hasNext()) {
+            out.append(it.next().getSimpleName());
+            while (it.hasNext()) {
+                out.append(", ").append(it.next().getSimpleName());
+            }
+        }
+
+        return out.toString();
+    }
+
     private void processConstructor(RoundEnvironment env, Element element, boolean performanceCritical, StringBuilder out) {
         ExecutableElement ctor = (ExecutableElement) element;
         TypeElement clazz = (TypeElement) element.getEnclosingElement();
         Types typeUtils = processingEnv.getTypeUtils();
         boolean isException = isInstanceOf(typeUtils, clazz, Throwable.class);
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "exception " + isException);
-
-        String prefix = isException ? "throw" : "create";
-        String name = prefix + "_" + clazz.getQualifiedName().toString().replace('.', '_');
+        String paramList = generateParameterList(ctor);
 
         String className = clazz.getQualifiedName().toString().replace('.', '/');
-        out.append(isException ? "void " : "jobject ").append(name).append("(JNIEnv *env, char *msg) {\n");
+        out.append(generateCFunctionSignature(typeUtils, clazz, ctor)).append(" {\n");
         out.append("    jclass class = (*env)->FindClass(env, \"").append(className).append("\");\n");
         out.append("    if (class == NULL) {\n");
         out.append("        return").append(isException ? "" : " NULL").append(";\n");
         out.append("    }\n");
         if (isException) {
-            out.append("    (*env)->ThrowNew(env, ctor, ARGS);\n");
+            out.append("    (*env)->ThrowNew(env, ctor, ").append(paramList).append(");\n");
         } else {
             out.append("    jmethod ctor = (*env)->GetMethodID(env, class, \"<init>\", \"").append(generateJNIMethodSignature(typeUtils, ctor)).append("\");\n");
             out.append("    if (ctor == NULL) {\n");
             out.append("        return NULL;\n");
             out.append("    }\n");
-            out.append("    return (*env)->NewObject(env, class, ctor, ARGS);\n");
+            out.append("    return (*env)->NewObject(env, class, ctor, ").append(paramList).append(");\n");
         }
         out.append("}\n");
     }
