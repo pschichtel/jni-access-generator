@@ -120,27 +120,27 @@ public class JNIAccessProcessor extends AbstractProcessor {
     private static String getCType(Types typeUtils, TypeMirror type) {
         switch (type.getKind()) {
             case BOOLEAN:
-                return "bool";
+                return "jboolean";
             case CHAR:
-                return "char";
+                return "jchar";
             case BYTE:
-                return "int8_t";
+                return "jbyte";
             case SHORT:
-                return "int16_t";
+                return "jshort";
             case INT:
-                return "int32_t";
+                return "jint";
             case LONG:
-                return "int64_t";
+                return "jlong";
             case FLOAT:
-                return "float";
+                return "jfloat";
             case DOUBLE:
-                return "double";
+                return "jdouble";
             case VOID:
                 return "void";
             case DECLARED:
                 TypeElement elem = (TypeElement) typeUtils.asElement(type);
                 if (isInstanceOf(typeUtils, elem, String.class)) {
-                    return "char*";
+                    return "jstring";
                 } else if (isInstanceOf(typeUtils, elem, Throwable.class)) {
                     return "jthrowable";
                 } else {
