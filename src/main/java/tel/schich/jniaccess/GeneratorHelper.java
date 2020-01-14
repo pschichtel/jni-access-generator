@@ -123,7 +123,8 @@ public abstract class GeneratorHelper {
         out.append(");\n");
     }
 
-    public static void generateJStringFunctionOverloadBody(Types types, StringBuilder out, String functionName, AccessedMethod method) {
+    public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, AccessedMethod method) {
+        generateFunctionSignature(types, out, method, functionName, true);
         out.append(" {\n");
         generateJStringFunctionOverloadCall(types, out, "    ", functionName, method);
         out.append("}\n");

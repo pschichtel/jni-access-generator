@@ -55,16 +55,11 @@ public class ThrowWrapper extends WrappedElement {
         out.append("}\n");
     }
 
-    private void generateImplOverload(StringBuilder out) {
-        generateSig(out, true);
-        generateJStringFunctionOverloadBody(getTypes(), out, generateFunctionName(), constructor.getMethod());
-    }
-
     @Override
     public void generateDeclarations(StringBuilder out) {
         generateSig(out, false);
         out.append(";\n");
-        if (GeneratorHelper.hasStringParameter(getTypes(), constructor.getMethod())) {
+        if (hasStringParameter(getTypes(), constructor.getMethod())) {
             generateSig(out, true);
             out.append(";\n");
         }
@@ -75,8 +70,8 @@ public class ThrowWrapper extends WrappedElement {
     public void generateImplementations(StringBuilder out) {
         generateImpl(out);
         out.append("\n");
-        if (GeneratorHelper.hasStringParameter(getTypes(), constructor.getMethod())) {
-            generateImplOverload(out);
+        if (hasStringParameter(getTypes(), constructor.getMethod())) {
+            generateJStringFunctionOverload(getTypes(), out, generateFunctionName(), constructor.getMethod());
             out.append("\n");
         }
         out.append("\n");
