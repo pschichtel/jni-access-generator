@@ -26,6 +26,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
@@ -158,5 +159,9 @@ public abstract class TypeHelper {
                     return "jobject";
                 }
         }
+    }
+
+    public static TypeMirror getVoid(Types types) {
+        return types.getNoType(TypeKind.VOID);
     }
 }

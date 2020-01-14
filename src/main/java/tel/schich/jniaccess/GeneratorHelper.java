@@ -48,11 +48,11 @@ public abstract class GeneratorHelper {
     }
 
     public static void generateFunctionSignature(Types types, StringBuilder out, AccessedMethod method, TypeMirror returnType, String functionName, boolean cStrings) {
-        generateFunctionSignature(types, out, functionName, TypeHelper.getCType(types, returnType), method.isStatic(), method.getParams(), cStrings);
+        generateFunctionSignature(types, out, functionName, returnType, method.isStatic(), method.getParams(), cStrings);
     }
 
-    public static void generateFunctionSignature(Types types, StringBuilder out, String functionName, String returnType, boolean isStatic, List<MethodParam> params, boolean cStrings) {
-        out.append(returnType).append(" ");
+    public static void generateFunctionSignature(Types types, StringBuilder out, String functionName, TypeMirror returnType, boolean isStatic, List<MethodParam> params, boolean cStrings) {
+        out.append(TypeHelper.getCType(types, returnType)).append(" ");
         out.append(functionName).append("(JNIEnv *env");
         if (!isStatic) {
             out.append(", jobject instance");
@@ -100,8 +100,8 @@ public abstract class GeneratorHelper {
                 .append(");");
     }
 
-    public static void generateJStringConversions(Types types, StringBuilder out, String indention, AccessedMethod method) {
-        for (MethodParam param : method.getParams()) {
+    public static void generateJStringConversions(Types types, StringBuilder out, String indention, List<MethodParam> params) {
+        for (MethodParam param : params) {
             if (TypeHelper.isString(types, param.getType())) {
                 out.append(indention);
                 GeneratorHelper.generateJStringConversion(out, param);
@@ -110,23 +110,30 @@ public abstract class GeneratorHelper {
         }
     }
 
-    public static void generateJStringFunctionOverloadCall(Types types, StringBuilder out, String indention, String functionName, AccessedMethod method) {
-        generateJStringConversions(types, out, indention, method);
+    public static void generateJStringFunctionOverloadCall(Types types, StringBuilder out, String indention, String functionName, TypeMirror returnType, boolean isStatic, List<MethodParam> params) {
+        generateJStringConversions(types, out, indention, params);
         out.append(indention);
-        if (method.getElement().getReturnType().getKind() != TypeKind.VOID) {
+        if (returnType.getKind() != TypeKind.VOID) {
             out.append("return ");
         }
         out.append(functionName).append("(env");
-        for (MethodParam param : method.getParams()) {
+        if (!isStatic) {
+            out.append(", instance");
+        }
+        for (MethodParam param : params) {
             out.append(", ").append(param.getName());
         }
         out.append(");\n");
     }
 
     public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, AccessedMethod method) {
-        generateFunctionSignature(types, out, method, functionName, true);
+        generateJStringFunctionOverload(types, out, functionName, method.isStatic(), method.getElement().getReturnType(), method.getParams());
+    }
+
+    public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, boolean isStatic, TypeMirror returnType, List<MethodParam> params) {
+        generateFunctionSignature(types, out, functionName, returnType, isStatic, params, true);
         out.append(" {\n");
-        generateJStringFunctionOverloadCall(types, out, "    ", functionName, method);
+        generateJStringFunctionOverloadCall(types, out, "    ", functionName, returnType, isStatic, params);
         out.append("}\n");
     }
 

@@ -32,18 +32,19 @@ import static tel.schich.jniaccess.GeneratorHelper.*;
 public class FieldWrapper extends WrappedElement {
     private final AccessedClass clazz;
     private final AccessedField field;
+    private final List<MethodParam> writeParams;
 
     public FieldWrapper(Types types, boolean performanceCritical, AccessedClass clazz, AccessedField field) {
         super(types, performanceCritical);
         this.clazz = clazz;
         this.field = field;
+        writeParams = Collections.singletonList(new MethodParam("value", field.getElement(), field.getType()));
     }
 
     private void generateReadSig(StringBuilder out) {
         String name = GeneratorHelper.functionName("read", clazz, field.getElement().getSimpleName());
-        String returnType = TypeHelper.getCType(getTypes(), field.getType());
 
-        generateFunctionSignature(getTypes(), out, name, returnType, field.isStatic(), Collections.emptyList(), false);
+        generateFunctionSignature(getTypes(), out, name, field.getType(), field.isStatic(), Collections.emptyList(), false);
     }
 
     private void generateReadImpl(StringBuilder out) {
@@ -63,16 +64,18 @@ public class FieldWrapper extends WrappedElement {
         out.append("}\n");
     }
 
-    private void generateWriteSig(StringBuilder out) {
-        String name = GeneratorHelper.functionName("write", clazz, field.getElement().getSimpleName());
-        List<MethodParam> param = Collections.singletonList(new MethodParam("value", field.getElement(), field.getType()));
-        generateFunctionSignature(getTypes(), out, name, "void", field.isStatic(), param, false);
+    private String generateWriteFunctionName() {
+        return GeneratorHelper.functionName("write", clazz, field.getElement().getSimpleName());
+    }
+
+    private void generateWriteSig(StringBuilder out, boolean cStrings) {
+        generateFunctionSignature(getTypes(), out, generateWriteFunctionName(), TypeHelper.getVoid(getTypes()), field.isStatic(), writeParams, cStrings);
     }
 
     private void generateWriteImpl(StringBuilder out) {
         String accessorType = TypeHelper.getJNIHelperType(field.getType());
 
-        generateWriteSig(out);
+        generateWriteSig(out, false);
         out.append(" {\n");
         generateClassLookup(out, "class", clazz, "    ");
         out.append('\n');
@@ -91,8 +94,12 @@ public class FieldWrapper extends WrappedElement {
         generateReadSig(out);
         out.append(";\n");
         if (!field.isFinal()) {
-            generateWriteSig(out);
+            generateWriteSig(out, false);
             out.append(";\n");
+            if (TypeHelper.isString(getTypes(), field.getType())) {
+                generateWriteSig(out, true);
+                out.append(";\n");
+            }
         }
         out.append("\n");
     }
@@ -104,6 +111,10 @@ public class FieldWrapper extends WrappedElement {
         if (!field.isFinal()) {
             generateWriteImpl(out);
             out.append("\n");
+            if (TypeHelper.isString(getTypes(), field.getType())) {
+                generateJStringFunctionOverload(getTypes(), out, generateWriteFunctionName(), field.isStatic(), TypeHelper.getVoid(getTypes()), writeParams);
+                out.append("\n");
+            }
         }
         out.append("\n");
     }
