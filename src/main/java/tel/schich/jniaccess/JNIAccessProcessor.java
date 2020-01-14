@@ -107,7 +107,7 @@ public class JNIAccessProcessor extends AbstractProcessor {
         Types typeUtils = processingEnv.getTypeUtils();
         ConstructorCall call = new ConstructorCall(new AccessedClass(clazz, clazz.asType()), new AccessedMethod(ctor, getParams(ctor)));
 
-        if (TypeHelper.isInstanceOf(typeUtils, clazz, Throwable.class)) {
+        if (TypeHelper.isInstanceOf(typeUtils, clazz.asType(), Throwable.class)) {
             return new ThrowWrapper(typeUtils, performanceCritical, call);
         } else {
             return new NewInstanceWrapper(typeUtils, performanceCritical, call);

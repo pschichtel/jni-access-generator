@@ -25,6 +25,7 @@ package tel.schich.jniaccess;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
@@ -32,19 +33,26 @@ public abstract class TypeHelper {
     private TypeHelper() {
     }
 
-    static boolean isInstanceOf(Types typeUtils, TypeElement element, Class<?> type) {
-        if (element.getQualifiedName().toString().equals(type.getName())) {
+    static boolean isInstanceOf(Types typeUtils, TypeMirror haystack, Class<?> needle) {
+        Element element = typeUtils.asElement(haystack);
+        if (!(element instanceof TypeElement)) {
+            return false;
+        }
+        if (((TypeElement) element).getQualifiedName().toString().equals(needle.getName())) {
             return true;
         }
 
-        for (TypeMirror superType : typeUtils.directSupertypes(element.asType())) {
-            Element superElement = typeUtils.asElement(superType);
-            if (superElement instanceof TypeElement) {
-                return isInstanceOf(typeUtils, (TypeElement) superElement, type);
+        for (TypeMirror superType : typeUtils.directSupertypes(haystack)) {
+            if (superType instanceof DeclaredType) {
+                return isInstanceOf(typeUtils, superType, needle);
             }
         }
 
         return false;
+    }
+
+    static boolean isString(Types typeUtils, TypeMirror type) {
+        return isInstanceOf(typeUtils, type, String.class);
     }
 
     static String getJNIType(Types typeUtils, TypeMirror type) {
@@ -142,10 +150,9 @@ public abstract class TypeHelper {
                         return "jobjectArray";
                 }
             default:
-                TypeElement elem = (TypeElement) typeUtils.asElement(type);
-                if (isInstanceOf(typeUtils, elem, String.class)) {
+                if (isInstanceOf(typeUtils, type, String.class)) {
                     return "jstring";
-                } else if (isInstanceOf(typeUtils, elem, Throwable.class)) {
+                } else if (isInstanceOf(typeUtils, type, Throwable.class)) {
                     return "jthrowable";
                 } else {
                     return "jobject";

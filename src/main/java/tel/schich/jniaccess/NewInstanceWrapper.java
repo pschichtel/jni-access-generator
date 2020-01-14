@@ -25,6 +25,7 @@ package tel.schich.jniaccess;
 import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
+import static tel.schich.jniaccess.GeneratorHelper.generateFunctionSignature;
 import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
 
 public class NewInstanceWrapper extends WrappedElement {
@@ -39,19 +40,16 @@ public class NewInstanceWrapper extends WrappedElement {
         return constructor;
     }
 
-    private void generateSig(StringBuilder out) {
-        out.append(TypeHelper.getCType(getTypes(), constructor.getMethod().getElement().getReturnType()))
-                .append(" ")
-                .append(GeneratorHelper.functionName("create", constructor.getClazz()))
-                .append("(JNIEnv *env");
-        for (MethodParam param : constructor.getMethod().getParams()) {
-            out.append(", ").append(TypeHelper.getCType(getTypes(), param.getType())).append(' ').append(param.getName());
-        }
-        out.append(")");
+    private String generateFunctionName() {
+        return GeneratorHelper.functionName("create", constructor.getClazz());
+    }
+
+    private void generateSig(StringBuilder out, boolean cStrings) {
+        generateFunctionSignature(getTypes(), out, constructor.getMethod(), constructor.getClazz().getType(), generateFunctionName(), cStrings);
     }
 
     private void generateImpl(StringBuilder out) {
-        generateSig(out);
+        generateSig(out, false);
         out.append(" {\n");
         out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(constructor.getClazz())).append("\");\n");
         out.append("    jmethodID ctor = (*env)->GetMethodID(env, class, \"<init>\", \"");
@@ -67,7 +65,7 @@ public class NewInstanceWrapper extends WrappedElement {
 
     @Override
     public void generateDeclarations(StringBuilder out) {
-        generateSig(out);
+        generateSig(out, false);
         out.append(";\n\n");
     }
 

@@ -25,6 +25,7 @@ package tel.schich.jniaccess;
 import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
+import static tel.schich.jniaccess.GeneratorHelper.generateFunctionSignature;
 import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
 
 public class MethodCallWrapper extends WrappedElement {
@@ -45,18 +46,12 @@ public class MethodCallWrapper extends WrappedElement {
         return method;
     }
 
-    private void generateSig(StringBuilder out) {
-        out.append(TypeHelper.getCType(getTypes(), method.getElement().getReturnType()))
-                .append(" ")
-                .append(GeneratorHelper.functionName("call", clazz, method.getElement().getSimpleName()))
-                .append("(JNIEnv *env");
-        if (!method.isStatic()) {
-            out.append(", jobject instance");
-        }
-        for (MethodParam param : method.getParams()) {
-            out.append(", ").append(TypeHelper.getCType(getTypes(), param.getType())).append(' ').append(param.getName());
-        }
-        out.append(")");
+    private String generateFunctionName() {
+        return GeneratorHelper.functionName("call", clazz, method.getElement().getSimpleName());
+    }
+
+    private void generateSig(StringBuilder out, boolean cStrings) {
+        generateFunctionSignature(getTypes(), out, method, generateFunctionName(), cStrings);
     }
 
     private void generateImpl(StringBuilder out) {
@@ -64,7 +59,7 @@ public class MethodCallWrapper extends WrappedElement {
         Name methodName = method.getElement().getSimpleName();
         String accessorType = TypeHelper.getJNIHelperType(method.getElement().getReturnType());
 
-        generateSig(out);
+        generateSig(out, false);
         out.append(" {\n");
         out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(clazz)).append("\");\n");
         out.append("    jmethodID method = (*env)->").append(lookup).append("(env, class, \"").append(methodName).append("\", \"");
@@ -84,7 +79,7 @@ public class MethodCallWrapper extends WrappedElement {
 
     @Override
     public void generateDeclarations(StringBuilder out) {
-        generateSig(out);
+        generateSig(out, false);
         out.append(";\n\n");
     }
 

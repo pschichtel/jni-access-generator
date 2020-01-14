@@ -22,9 +22,10 @@
  */
 package tel.schich.jniaccess;
 
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
-import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
+import static tel.schich.jniaccess.GeneratorHelper.*;
 
 public class ThrowWrapper extends WrappedElement {
     private final ConstructorCall constructor;
@@ -38,22 +39,19 @@ public class ThrowWrapper extends WrappedElement {
         return constructor;
     }
 
-    private void generateSig(StringBuilder out) {
-        out.append(TypeHelper.getCType(getTypes(), constructor.getMethod().getElement().getReturnType()))
-                .append(" ")
-                .append(GeneratorHelper.functionName("throw", constructor.getClazz()))
-                .append("(JNIEnv *env");
-        for (MethodParam param : constructor.getMethod().getParams()) {
-            out.append(", ").append(TypeHelper.getCType(getTypes(), param.getType())).append(' ').append(param.getName());
-        }
-        out.append(")");
+    private String generateFunctionName() {
+        return GeneratorHelper.functionName("throw", constructor.getClazz());
+    }
+
+    private void generateSig(StringBuilder out, boolean cStrings) {
+        generateFunctionSignature(getTypes(), out, constructor.getMethod(), generateFunctionName(), cStrings);
     }
 
     private void generateImpl(StringBuilder out) {
-        generateSig(out);
+        generateSig(out, false);
         out.append(" {\n");
         out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(constructor.getClazz())).append("\");\n");
-        out.append("    return (*env)->ThrowNew(env, class");
+        out.append("    (*env)->ThrowNew(env, class");
         for (MethodParam param : constructor.getMethod().getParams()) {
             out.append(", ").append(param.getName());
         }
@@ -61,15 +59,30 @@ public class ThrowWrapper extends WrappedElement {
         out.append("}\n");
     }
 
+    private void generateImplOverload(StringBuilder out) {
+        generateSig(out, true);
+        generateJStringFunctionOverloadBody(getTypes(), out, generateFunctionName(), constructor.getMethod());
+    }
+
     @Override
     public void generateDeclarations(StringBuilder out) {
-        generateSig(out);
-        out.append(";\n\n");
+        generateSig(out, false);
+        out.append(";\n");
+        if (GeneratorHelper.hasStringParameter(getTypes(), constructor.getMethod())) {
+            generateSig(out, true);
+            out.append(";\n");
+        }
+        out.append("\n");
     }
 
     @Override
     public void generateImplementations(StringBuilder out) {
         generateImpl(out);
-        out.append("\n\n");
+        out.append("\n");
+        if (GeneratorHelper.hasStringParameter(getTypes(), constructor.getMethod())) {
+            generateImplOverload(out);
+            out.append("\n");
+        }
+        out.append("\n");
     }
 }
