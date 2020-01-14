@@ -136,4 +136,38 @@ public abstract class GeneratorHelper {
     public static String functionName(String prefix, AccessedClass clazz, Name name) {
         return functionName(prefix, clazz) + "_" + name;
     }
+
+    public static void generateClassLookup(StringBuilder out, String var, AccessedClass clazz, String indention) {
+        out.append(indention).append("jclass ").append(var).append(" = (*env)->FindClass(env, \"").append(jniClassNameOf(clazz)).append("\");");
+    }
+
+    public static void generateMethodLookup(Types types, StringBuilder out, String var, String classVar, AccessedMethod method, String indention) {
+        out.append(indention)
+                .append("jmethodID ")
+                .append(var).append(" = (*env)->Get");
+        if (method.isStatic()) {
+            out.append("Static");
+        }
+        out.append("MethodID(env, ")
+                .append(classVar).append(", \"")
+                .append(method.getName())
+                .append("\", \"");
+        GeneratorHelper.generateJniMethodSignature(out, types, method);
+        out.append("\");");
+    }
+
+    public static void generateFieldLookup(Types types, StringBuilder out, String var, String classVar, AccessedField field, String indention) {
+        out.append(indention)
+                .append("jfieldID ")
+                .append(var).append(" = (*env)->Get");
+        if (field.isStatic()) {
+            out.append("Static");
+        }
+        out.append("FieldID(env, ")
+                .append(classVar).append(", \"")
+                .append(field.getName())
+                .append("\", \"")
+                .append(TypeHelper.getJNIType(types, field.getType()))
+                .append("\");");
+    }
 }

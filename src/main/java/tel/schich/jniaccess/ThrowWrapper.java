@@ -22,7 +22,6 @@
  */
 package tel.schich.jniaccess;
 
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
 import static tel.schich.jniaccess.GeneratorHelper.*;
@@ -50,7 +49,8 @@ public class ThrowWrapper extends WrappedElement {
     private void generateImpl(StringBuilder out) {
         generateSig(out, false);
         out.append(" {\n");
-        out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(constructor.getClazz())).append("\");\n");
+        generateClassLookup(out, "class", constructor.getClazz(), "    ");
+        out.append('\n');
         out.append("    (*env)->ThrowNew(env, class");
         for (MethodParam param : constructor.getMethod().getParams()) {
             out.append(", ").append(param.getName());

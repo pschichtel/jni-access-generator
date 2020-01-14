@@ -25,8 +25,7 @@ package tel.schich.jniaccess;
 import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
-import static tel.schich.jniaccess.GeneratorHelper.generateFunctionSignature;
-import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
+import static tel.schich.jniaccess.GeneratorHelper.*;
 
 public class MethodCallWrapper extends WrappedElement {
     private final AccessedClass clazz;
@@ -61,7 +60,8 @@ public class MethodCallWrapper extends WrappedElement {
 
         generateSig(out, false);
         out.append(" {\n");
-        out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(clazz)).append("\");\n");
+        generateClassLookup(out, "class", clazz, "    ");
+        out.append('\n');
         out.append("    jmethodID method = (*env)->").append(lookup).append("(env, class, \"").append(methodName).append("\", \"");
         GeneratorHelper.generateJniMethodSignature(out, getTypes(), method);
         out.append("\");\n");

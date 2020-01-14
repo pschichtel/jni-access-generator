@@ -47,6 +47,10 @@ public class AccessedMethod {
         return params;
     }
 
+    public String getName() {
+        return getElement().getSimpleName().toString();
+    }
+
     public boolean isConstructor() {
         return isConstructor;
     }

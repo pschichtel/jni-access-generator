@@ -22,14 +22,12 @@
  */
 package tel.schich.jniaccess;
 
-import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
 import java.util.Collections;
 import java.util.List;
 
-import static tel.schich.jniaccess.GeneratorHelper.generateFunctionSignature;
-import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
+import static tel.schich.jniaccess.GeneratorHelper.*;
 
 public class FieldWrapper extends WrappedElement {
     private final AccessedClass clazz;
@@ -57,15 +55,14 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateReadImpl(StringBuilder out) {
-        String lookup = field.isStatic() ? "GetStaticFieldID" : "GetFieldID";
-        Name fieldName = field.getElement().getSimpleName();
-        String sig = TypeHelper.getJNIType(getTypes(), field.getType());
         String accessorType = TypeHelper.getJNIHelperType(field.getType());
 
         generateReadSig(out);
         out.append(" {\n");
-        out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(clazz)).append("\");\n");
-        out.append("    jfieldID field = (*env)->").append(lookup).append("(env, class, \"").append(fieldName).append("\", \"").append(sig).append("\");\n");
+        generateClassLookup(out, "class", clazz, "    ");
+        out.append('\n');
+        generateFieldLookup(getTypes(), out, "field", "class", field, "    ");
+        out.append('\n');
         if (field.isStatic()) {
             out.append("    return (*env)->GetStatic").append(accessorType).append("Field(env, class, field);\n");
         } else {
@@ -81,15 +78,14 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateWriteImpl(StringBuilder out) {
-        String lookup = field.isStatic() ? "GetStaticFieldID" : "GetFieldID";
-        Name fieldName = field.getElement().getSimpleName();
-        String sig = TypeHelper.getJNIType(getTypes(), field.getType());
         String accessorType = TypeHelper.getJNIHelperType(field.getType());
 
         generateWriteSig(out);
         out.append(" {\n");
-        out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(clazz)).append("\");\n");
-        out.append("    jfieldID field = (*env)->").append(lookup).append("(env, class, \"").append(fieldName).append("\", \"").append(sig).append("\");\n");
+        generateClassLookup(out, "class", clazz, "    ");
+        out.append('\n');
+        generateFieldLookup(getTypes(), out, "field", "class", field, "    ");
+        out.append('\n');
         if (field.isStatic()) {
             out.append("    (*env)->SetStatic").append(accessorType).append("Field(env, class, field, value);\n");
         } else {

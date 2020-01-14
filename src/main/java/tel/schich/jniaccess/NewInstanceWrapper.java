@@ -22,11 +22,9 @@
  */
 package tel.schich.jniaccess;
 
-import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
-import static tel.schich.jniaccess.GeneratorHelper.generateFunctionSignature;
-import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
+import static tel.schich.jniaccess.GeneratorHelper.*;
 
 public class NewInstanceWrapper extends WrappedElement {
     private final ConstructorCall constructor;
@@ -51,10 +49,10 @@ public class NewInstanceWrapper extends WrappedElement {
     private void generateImpl(StringBuilder out) {
         generateSig(out, false);
         out.append(" {\n");
-        out.append("    jclass class = (*env)->FindClass(env, \"").append(jniClassNameOf(constructor.getClazz())).append("\");\n");
-        out.append("    jmethodID ctor = (*env)->GetMethodID(env, class, \"<init>\", \"");
-        GeneratorHelper.generateJniMethodSignature(out, getTypes(), constructor.getMethod());
-        out.append("\");\n");
+        generateClassLookup(out, "class", constructor.getClazz(), "    ");
+        out.append('\n');
+        generateMethodLookup(getTypes(), out, "ctor", "class", constructor.getMethod(), "    ");
+        out.append('\n');
         out.append("    return (*env)->NewObject(env, class, ctor");
         for (MethodParam param : constructor.getMethod().getParams()) {
             out.append(", ").append(param.getName());

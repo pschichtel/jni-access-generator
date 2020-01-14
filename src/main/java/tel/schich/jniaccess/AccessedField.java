@@ -47,6 +47,10 @@ public class AccessedField {
         return type;
     }
 
+    public String getName() {
+        return element.getSimpleName().toString();
+    }
+
     public boolean isStatic() {
         return isStatic;
     }
