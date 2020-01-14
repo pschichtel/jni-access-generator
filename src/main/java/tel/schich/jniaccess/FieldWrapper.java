@@ -47,10 +47,8 @@ public class FieldWrapper extends WrappedElement {
 
     private void generateReadSig(StringBuilder out) {
         out.append(TypeHelper.getCType(getTypes(), field.getType()))
-            .append(" read_")
-            .append(clazz.getElement().getQualifiedName().toString().replace('.', '_'))
-            .append('_')
-            .append(field.getElement().getSimpleName().toString())
+            .append(" ")
+            .append(GeneratorHelper.functionName("read", clazz, field.getElement().getSimpleName()))
             .append("(JNIEnv *env");
         if (!field.isStatic()) {
             out.append(", jobject instance");
@@ -77,10 +75,8 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateWriteSig(StringBuilder out) {
-        out.append("void write_")
-            .append(clazz.getElement().getQualifiedName().toString().replace('.', '_'))
-            .append('_')
-            .append(field.getElement().getSimpleName().toString())
+        out.append("void ")
+            .append(GeneratorHelper.functionName("write", clazz, field.getElement().getSimpleName()))
             .append("(JNIEnv *env");
         if (!field.isStatic()) {
             out.append(", jobject instance");

@@ -47,10 +47,8 @@ public class MethodCallWrapper extends WrappedElement {
 
     private void generateSig(StringBuilder out) {
         out.append(TypeHelper.getCType(getTypes(), method.getElement().getReturnType()))
-                .append(" call_")
-                .append(clazz.getElement().getQualifiedName().toString().replace('.', '_'))
-                .append('_')
-                .append(method.getElement().getSimpleName().toString())
+                .append(" ")
+                .append(GeneratorHelper.functionName("call", clazz, method.getElement().getSimpleName()))
                 .append("(JNIEnv *env");
         if (!method.isStatic()) {
             out.append(", jobject instance");
