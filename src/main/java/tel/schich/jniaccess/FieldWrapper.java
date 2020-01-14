@@ -25,6 +25,10 @@ package tel.schich.jniaccess;
 import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
+import java.util.Collections;
+import java.util.List;
+
+import static tel.schich.jniaccess.GeneratorHelper.generateFunctionSignature;
 import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
 
 public class FieldWrapper extends WrappedElement {
@@ -46,14 +50,10 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateReadSig(StringBuilder out) {
-        out.append(TypeHelper.getCType(getTypes(), field.getType()))
-            .append(" ")
-            .append(GeneratorHelper.functionName("read", clazz, field.getElement().getSimpleName()))
-            .append("(JNIEnv *env");
-        if (!field.isStatic()) {
-            out.append(", jobject instance");
-        }
-        out.append(")");
+        String name = GeneratorHelper.functionName("read", clazz, field.getElement().getSimpleName());
+        String returnType = TypeHelper.getCType(getTypes(), field.getType());
+
+        generateFunctionSignature(getTypes(), out, name, returnType, field.isStatic(), Collections.emptyList(), false);
     }
 
     private void generateReadImpl(StringBuilder out) {
@@ -75,15 +75,9 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateWriteSig(StringBuilder out) {
-        out.append("void ")
-            .append(GeneratorHelper.functionName("write", clazz, field.getElement().getSimpleName()))
-            .append("(JNIEnv *env");
-        if (!field.isStatic()) {
-            out.append(", jobject instance");
-        }
-        out.append(", ")
-            .append(TypeHelper.getCType(getTypes(), field.getType()))
-            .append(" value)");
+        String name = GeneratorHelper.functionName("write", clazz, field.getElement().getSimpleName());
+        List<MethodParam> param = Collections.singletonList(new MethodParam("value", field.getElement(), field.getType()));
+        generateFunctionSignature(getTypes(), out, name, "void", field.isStatic(), param, false);
     }
 
     private void generateWriteImpl(StringBuilder out) {

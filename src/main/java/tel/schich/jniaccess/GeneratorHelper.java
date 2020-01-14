@@ -27,6 +27,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
+import java.util.List;
 
 public abstract class GeneratorHelper {
     public static final String C_STRING_PREFIX = "c_";
@@ -47,12 +48,16 @@ public abstract class GeneratorHelper {
     }
 
     public static void generateFunctionSignature(Types types, StringBuilder out, AccessedMethod method, TypeMirror returnType, String functionName, boolean cStrings) {
-        out.append(TypeHelper.getCType(types, returnType)).append(" ");
+        generateFunctionSignature(types, out, functionName, TypeHelper.getCType(types, returnType), method.isStatic(), method.getParams(), cStrings);
+    }
+
+    public static void generateFunctionSignature(Types types, StringBuilder out, String functionName, String returnType, boolean isStatic, List<MethodParam> params, boolean cStrings) {
+        out.append(returnType).append(" ");
         out.append(functionName).append("(JNIEnv *env");
-        if (!method.isStatic()) {
+        if (!isStatic) {
             out.append(", jobject instance");
         }
-        for (MethodParam param : method.getParams()) {
+        for (MethodParam param : params) {
             final TypeMirror type = param.getType();
             final String cType;
             final String name;
