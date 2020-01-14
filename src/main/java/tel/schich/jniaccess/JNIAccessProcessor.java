@@ -28,10 +28,15 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 
 public class JNIAccessProcessor extends AbstractProcessor {
     private static final Set<String> SUPPORTED_ANNOTATIONS = Collections.singleton(JNIAccess.class.getCanonicalName());
+    private static final String OUTPUT_FILE_NAME = "jni-c-to-java";
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -63,22 +68,37 @@ public class JNIAccessProcessor extends AbstractProcessor {
             }
         }
 
-        StringBuilder out = new StringBuilder();
-
-
-        out.append("\n\n");
-        for (WrappedElement e : wrappedElements) {
-            e.generateDeclarations(out);
-        }
-        out.append("\n\n");
-        for (WrappedElement e : wrappedElements) {
-            e.generateImplementations(out);
+        if (wrappedElements.isEmpty()) {
+            return false;
         }
 
+        StringBuilder headerOutput = new StringBuilder();
+        for (WrappedElement e : wrappedElements) {
+            e.generateDeclarations(headerOutput);
+        }
+        writeNativeContent(headerOutput, OUTPUT_FILE_NAME + ".h");
 
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, out);
+        StringBuilder implementationOutput = new StringBuilder();
+        for (WrappedElement e : wrappedElements) {
+            e.generateImplementations(implementationOutput);
+        }
+        writeNativeContent(implementationOutput, OUTPUT_FILE_NAME + ".c");
 
-        return false;
+        return true;
+    }
+
+    private void writeNativeContent(StringBuilder out, String file) {
+        try {
+            FileObject resource = processingEnv.getFiler().createResource(StandardLocation.NATIVE_HEADER_OUTPUT, "", file);
+            Writer writer = resource.openWriter();
+            try {
+                writer.write(out.toString());
+            } finally {
+                writer.close();
+            }
+        } catch (IOException e) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getLocalizedMessage());
+        }
     }
 
     private WrappedElement processConstructor(Element element, boolean performanceCritical) {
