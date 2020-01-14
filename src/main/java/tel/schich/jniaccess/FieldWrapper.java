@@ -23,7 +23,6 @@
 package tel.schich.jniaccess;
 
 import javax.lang.model.element.Name;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
 import static tel.schich.jniaccess.GeneratorHelper.jniClassNameOf;
@@ -113,15 +112,21 @@ public class FieldWrapper extends WrappedElement {
     public void generateDeclarations(StringBuilder out) {
         generateReadSig(out);
         out.append(";\n");
-        generateWriteSig(out);
-        out.append(";\n\n");
+        if (!field.isFinal()) {
+            generateWriteSig(out);
+            out.append(";\n");
+        }
+        out.append("\n");
     }
 
     @Override
     public void generateImplementations(StringBuilder out) {
         generateReadImpl(out);
         out.append("\n");
-        generateWriteImpl(out);
-        out.append("\n\n");
+        if (!field.isFinal()) {
+            generateWriteImpl(out);
+            out.append("\n");
+        }
+        out.append("\n");
     }
 }

@@ -30,11 +30,13 @@ public class AccessedField {
     private final VariableElement element;
     private final TypeMirror type;
     private final boolean isStatic;
+    private final boolean isFinal;
 
     public AccessedField(VariableElement element, TypeMirror type) {
         this.element = element;
         this.type = type;
         this.isStatic = this.element.getModifiers().contains(Modifier.STATIC);
+        this.isFinal = this.element.getModifiers().contains(Modifier.FINAL);
     }
 
     public VariableElement getElement() {
@@ -47,5 +49,9 @@ public class AccessedField {
 
     public boolean isStatic() {
         return isStatic;
+    }
+
+    public boolean isFinal() {
+        return isFinal;
     }
 }
