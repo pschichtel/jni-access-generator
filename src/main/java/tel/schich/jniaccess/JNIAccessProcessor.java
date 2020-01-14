@@ -26,13 +26,9 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class JNIAccessProcessor extends AbstractProcessor {
     private static final Set<String> SUPPORTED_ANNOTATIONS = Collections.singleton(JNIAccess.class.getCanonicalName());
@@ -50,206 +46,75 @@ public class JNIAccessProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(JNIAccess.class);
-        StringBuilder out = new StringBuilder();
+        List<WrappedElement> wrappedElements = new ArrayList<>();
         for (Element annotatedElement : annotatedElements) {
             boolean performanceCritical = annotatedElement.getAnnotation(JNIAccess.class).performanceCritical();
             switch (annotatedElement.getKind()) {
                 case CONSTRUCTOR:
-                    processConstructor(roundEnv, annotatedElement, performanceCritical, out);
+                    wrappedElements.add(processConstructor(annotatedElement, performanceCritical));
                     break;
                 case METHOD:
-                    processMethod(roundEnv, annotatedElement, performanceCritical, out);
+                    wrappedElements.add(processMethod(annotatedElement, performanceCritical));
                     break;
                 case FIELD:
-                    processField(roundEnv, annotatedElement, performanceCritical, out);
+                    wrappedElements.add(processField(annotatedElement, performanceCritical));
                     break;
                 default:
             }
         }
+
+        StringBuilder out = new StringBuilder();
+
+
+        out.append("\n\n");
+        for (WrappedElement e : wrappedElements) {
+            e.generateDeclarations(out);
+        }
+        out.append("\n\n");
+        for (WrappedElement e : wrappedElements) {
+            e.generateImplementations(out);
+        }
+
 
         processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, out);
 
         return false;
     }
 
-    private static boolean isInstanceOf(Types typeUtils, TypeElement element, Class<?> type) {
-        if (element.getQualifiedName().toString().equals(type.getName())) {
-            return true;
-        }
-
-        for (TypeMirror superType : typeUtils.directSupertypes(element.asType())) {
-            Element superElement = typeUtils.asElement(superType);
-            if (superElement instanceof TypeElement) {
-                return isInstanceOf(typeUtils, (TypeElement) superElement, type);
-            }
-        }
-
-        return false;
-    }
-
-    private static String getJNIType(Types typeUtils, TypeMirror type) {
-        switch (type.getKind()) {
-            case BOOLEAN:
-                return "Z";
-            case CHAR:
-                return "C";
-            case BYTE:
-                return "B";
-            case SHORT:
-                return "S";
-            case INT:
-                return "I";
-            case LONG:
-                return "J";
-            case FLOAT:
-                return "F";
-            case DOUBLE:
-                return "D";
-            case VOID:
-                return "V";
-            case DECLARED:
-                TypeElement elem = (TypeElement) typeUtils.asElement(type);
-                return "L" + elem.getQualifiedName().toString().replace('.', '/') + ";";
-            case ARRAY:
-                return "[" + getJNIType(typeUtils, ((ArrayType) type).getComponentType());
-            default:
-                throw new IllegalArgumentException("Unsupported type!");
-        }
-    }
-
-    private static String getCType(Types typeUtils, TypeMirror type) {
-        switch (type.getKind()) {
-            case BOOLEAN:
-                return "jboolean";
-            case CHAR:
-                return "jchar";
-            case BYTE:
-                return "jbyte";
-            case SHORT:
-                return "jshort";
-            case INT:
-                return "jint";
-            case LONG:
-                return "jlong";
-            case FLOAT:
-                return "jfloat";
-            case DOUBLE:
-                return "jdouble";
-            case VOID:
-                return "void";
-            case DECLARED:
-                TypeElement elem = (TypeElement) typeUtils.asElement(type);
-                if (isInstanceOf(typeUtils, elem, String.class)) {
-                    return "jstring";
-                } else if (isInstanceOf(typeUtils, elem, Throwable.class)) {
-                    return "jthrowable";
-                } else {
-                    return "jobject";
-                }
-            case ARRAY:
-                return getCType(typeUtils, type) + "*";
-            default:
-                throw new IllegalArgumentException("Unsupported type!");
-        }
-    }
-
-    private static String generateJNIMethodSignature(Types typeUtils, ExecutableElement executable) {
-        StringBuilder out = new StringBuilder("(");
-        for (VariableElement parameter : executable.getParameters()) {
-            out.append(getJNIType(typeUtils, parameter.asType()));
-        }
-        out.append(")");
-        out.append(getJNIType(typeUtils, executable.getReturnType()));
-
-        return out.toString();
-    }
-
-    private static String generateCFunctionSignature(Types typeUtils, TypeElement type, ExecutableElement executable) {
-        String name = executable.getSimpleName().toString();
-        boolean isConstructor = name.equals("<init>");
-        boolean isException = isConstructor && isInstanceOf(typeUtils, type, Throwable.class);
-
-        final String returnType;
-        final String prefix;
-        if (isConstructor) {
-            if (isException) {
-                prefix = "throw_";
-                returnType = "void";
-            } else {
-                prefix = "create_";
-                returnType = "jobject";
-            }
-        } else {
-            prefix = "call_";
-            returnType = getCType(typeUtils, executable.getReturnType());
-        }
-        final String classComponent = type.getQualifiedName().toString().replace('.', '_');
-        final String methodComponent;
-        if (isConstructor) {
-            methodComponent = "";
-        } else {
-            methodComponent = "_" + executable.getSimpleName();
-        }
-
-        StringBuilder out = new StringBuilder();
-        out.append(returnType).append(' ').append(prefix).append(classComponent).append(methodComponent).append(' ');
-        out.append("(JNIEnv *env");
-        TypeMirror receiverType = executable.getReceiverType();
-        if (!isConstructor && receiverType != null) {
-            out.append(", ").append(getCType(typeUtils, receiverType));
-        }
-        for (VariableElement parameter : executable.getParameters()) {
-            out.append(", ").append(getCType(typeUtils, parameter.asType())).append(' ').append(parameter.getSimpleName());
-        }
-        out.append(')');
-
-
-        return out.toString();
-    }
-
-    private String generateParameterList(ExecutableElement executable) {
-        StringBuilder out = new StringBuilder();
-        Iterator<? extends VariableElement> it = executable.getParameters().iterator();
-        if (it.hasNext()) {
-            out.append(it.next().getSimpleName());
-            while (it.hasNext()) {
-                out.append(", ").append(it.next().getSimpleName());
-            }
-        }
-
-        return out.toString();
-    }
-
-    private void processConstructor(RoundEnvironment env, Element element, boolean performanceCritical, StringBuilder out) {
-        ExecutableElement ctor = (ExecutableElement) element;
+    private WrappedElement processConstructor(Element element, boolean performanceCritical) {
         TypeElement clazz = (TypeElement) element.getEnclosingElement();
+        ExecutableElement ctor = (ExecutableElement) element;
         Types typeUtils = processingEnv.getTypeUtils();
-        boolean isException = isInstanceOf(typeUtils, clazz, Throwable.class);
-        String paramList = generateParameterList(ctor);
+        ConstructorCall call = new ConstructorCall(new AccessedClass(clazz, clazz.asType()), new AccessedMethod(ctor, getParams(ctor)));
 
-        String className = clazz.getQualifiedName().toString().replace('.', '/');
-        out.append(generateCFunctionSignature(typeUtils, clazz, ctor)).append(" {\n");
-        out.append("    jclass class = (*env)->FindClass(env, \"").append(className).append("\");\n");
-        out.append("    if (class == NULL) {\n");
-        out.append("        return").append(isException ? "" : " NULL").append(";\n");
-        out.append("    }\n");
-        if (isException) {
-            out.append("    (*env)->ThrowNew(env, ctor, ").append(paramList).append(");\n");
+        if (TypeHelper.isInstanceOf(typeUtils, clazz, Throwable.class)) {
+            return new ThrowWrapper(typeUtils, performanceCritical, call);
         } else {
-            out.append("    jmethod ctor = (*env)->GetMethodID(env, class, \"<init>\", \"").append(generateJNIMethodSignature(typeUtils, ctor)).append("\");\n");
-            out.append("    if (ctor == NULL) {\n");
-            out.append("        return NULL;\n");
-            out.append("    }\n");
-            out.append("    return (*env)->NewObject(env, class, ctor, ").append(paramList).append(");\n");
+            return new NewInstanceWrapper(typeUtils, performanceCritical, call);
         }
-        out.append("}\n");
     }
 
-    private void processMethod(RoundEnvironment env, Element element, boolean performanceCritical, StringBuilder out) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "method " + element.getSimpleName());
+    private WrappedElement processMethod(Element element, boolean performanceCritical) {
+        Types typeUtils = processingEnv.getTypeUtils();
+        TypeElement clazz = (TypeElement) element.getEnclosingElement();
+        ExecutableElement method = (ExecutableElement) element;
+        return new MethodCallWrapper(typeUtils, performanceCritical, new AccessedClass(clazz, clazz.asType()), new AccessedMethod(method, getParams(method)));
     }
 
-    private void processField(RoundEnvironment env, Element element, boolean performanceCritical, StringBuilder out) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "field " + element.getSimpleName());
+    private WrappedElement processField(Element element, boolean performanceCritical) {
+        Types typeUtils = processingEnv.getTypeUtils();
+        TypeElement clazz = (TypeElement) element.getEnclosingElement();
+        VariableElement field = (VariableElement) element;
+        return new FieldWrapper(typeUtils, performanceCritical, new AccessedClass(clazz, clazz.asType()), new AccessedField(field, field.asType()));
+    }
+
+    private static List<MethodParam> getParams(ExecutableElement element) {
+        List<MethodParam> params = new ArrayList<>();
+
+        for (VariableElement parameter : element.getParameters()) {
+            params.add(new MethodParam(parameter.getSimpleName().toString(), parameter, parameter.asType()));
+        }
+
+        return params;
     }
 }
