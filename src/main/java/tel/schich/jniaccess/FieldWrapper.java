@@ -39,14 +39,6 @@ public class FieldWrapper extends WrappedElement {
         this.field = field;
     }
 
-    public AccessedClass getClazz() {
-        return clazz;
-    }
-
-    public AccessedField getField() {
-        return field;
-    }
-
     private void generateReadSig(StringBuilder out) {
         String name = GeneratorHelper.functionName("read", clazz, field.getElement().getSimpleName());
         String returnType = TypeHelper.getCType(getTypes(), field.getType());

@@ -34,10 +34,6 @@ public class NewInstanceWrapper extends WrappedElement {
         this.constructor = constructor;
     }
 
-    public ConstructorCall getConstructor() {
-        return constructor;
-    }
-
     private String generateFunctionName() {
         return GeneratorHelper.functionName("create", constructor.getClazz());
     }

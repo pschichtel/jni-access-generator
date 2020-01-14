@@ -37,14 +37,6 @@ public class MethodCallWrapper extends WrappedElement {
         this.method = method;
     }
 
-    public AccessedClass getClazz() {
-        return clazz;
-    }
-
-    public AccessedMethod getMethod() {
-        return method;
-    }
-
     private String generateFunctionName() {
         return GeneratorHelper.functionName("call", clazz, method.getElement().getSimpleName());
     }

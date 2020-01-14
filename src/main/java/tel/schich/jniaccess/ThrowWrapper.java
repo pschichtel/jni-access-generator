@@ -34,10 +34,6 @@ public class ThrowWrapper extends WrappedElement {
         this.constructor = constructor;
     }
 
-    public ConstructorCall getConstructor() {
-        return constructor;
-    }
-
     private String generateFunctionName() {
         return GeneratorHelper.functionName("throw", constructor.getClazz());
     }
