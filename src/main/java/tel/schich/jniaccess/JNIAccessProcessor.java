@@ -53,7 +53,7 @@ public class JNIAccessProcessor extends AbstractProcessor {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(JNIAccess.class);
         List<WrappedElement> wrappedElements = new ArrayList<>();
         for (Element annotatedElement : annotatedElements) {
-            boolean performanceCritical = annotatedElement.getAnnotation(JNIAccess.class).performanceCritical();
+            boolean performanceCritical = annotatedElement.getAnnotation(PerformanceCritical.class) != null;
             switch (annotatedElement.getKind()) {
                 case CONSTRUCTOR:
                     wrappedElements.add(processConstructor(annotatedElement, performanceCritical));
