@@ -136,7 +136,7 @@
 
     <profiles>
         <profile>
-            <id>release-javacan</id>
+            <id>release-jni-access-generator</id>
             <build>
                 <plugins>
                     <plugin>
