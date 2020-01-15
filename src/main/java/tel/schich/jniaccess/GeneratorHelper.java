@@ -22,7 +22,6 @@
  */
 package tel.schich.jniaccess;
 
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -48,13 +47,13 @@ public abstract class GeneratorHelper {
     }
 
     public static void generateFunctionSignature(Types types, StringBuilder out, AccessedMethod method, TypeMirror returnType, String functionName, boolean cStrings) {
-        generateFunctionSignature(types, out, functionName, returnType, method.isStatic(), method.getParams(), cStrings);
+        generateFunctionSignature(types, out, functionName, returnType, !method.isStatic() && !method.isConstructor(), method.getParams(), cStrings);
     }
 
-    public static void generateFunctionSignature(Types types, StringBuilder out, String functionName, TypeMirror returnType, boolean isStatic, List<MethodParam> params, boolean cStrings) {
+    public static void generateFunctionSignature(Types types, StringBuilder out, String functionName, TypeMirror returnType, boolean instance, List<MethodParam> params, boolean cStrings) {
         out.append(TypeHelper.getCType(types, returnType)).append(" ");
         out.append(functionName).append("(JNIEnv *env");
-        if (!isStatic) {
+        if (instance) {
             out.append(", jobject instance");
         }
         for (MethodParam param : params) {
@@ -110,14 +109,14 @@ public abstract class GeneratorHelper {
         }
     }
 
-    public static void generateJStringFunctionOverloadCall(Types types, StringBuilder out, String indention, String functionName, TypeMirror returnType, boolean isStatic, List<MethodParam> params) {
+    public static void generateJStringFunctionOverloadCall(Types types, StringBuilder out, String indention, String functionName, TypeMirror returnType, boolean instance, List<MethodParam> params) {
         generateJStringConversions(types, out, indention, params);
         out.append(indention);
         if (returnType.getKind() != TypeKind.VOID) {
             out.append("return ");
         }
         out.append(functionName).append("(env");
-        if (!isStatic) {
+        if (instance) {
             out.append(", instance");
         }
         for (MethodParam param : params) {
@@ -127,13 +126,13 @@ public abstract class GeneratorHelper {
     }
 
     public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, AccessedMethod method) {
-        generateJStringFunctionOverload(types, out, functionName, method.isStatic(), method.getElement().getReturnType(), method.getParams());
+        generateJStringFunctionOverload(types, out, functionName, !method.isStatic() && !method.isConstructor(), method.getElement().getReturnType(), method.getParams());
     }
 
-    public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, boolean isStatic, TypeMirror returnType, List<MethodParam> params) {
-        generateFunctionSignature(types, out, functionName, returnType, isStatic, params, true);
+    public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, boolean instance, TypeMirror returnType, List<MethodParam> params) {
+        generateFunctionSignature(types, out, functionName, returnType, instance, params, true);
         out.append(" {\n");
-        generateJStringFunctionOverloadCall(types, out, "    ", functionName, returnType, isStatic, params);
+        generateJStringFunctionOverloadCall(types, out, "    ", functionName, returnType, instance, params);
         out.append("}\n");
     }
 

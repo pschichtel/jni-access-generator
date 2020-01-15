@@ -44,7 +44,7 @@ public class FieldWrapper extends WrappedElement {
     private void generateReadSig(StringBuilder out) {
         String name = GeneratorHelper.functionName("read", clazz, field.getName());
 
-        generateFunctionSignature(getTypes(), out, name, field.getType(), field.isStatic(), Collections.emptyList(), false);
+        generateFunctionSignature(getTypes(), out, name, field.getType(), !field.isStatic(), Collections.emptyList(), false);
     }
 
     private void generateReadImpl(StringBuilder out) {
@@ -57,7 +57,7 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateWriteSig(StringBuilder out, boolean cStrings) {
-        generateFunctionSignature(getTypes(), out, generateWriteFunctionName(), TypeHelper.getVoid(getTypes()), field.isStatic(), writeParams, cStrings);
+        generateFunctionSignature(getTypes(), out, generateWriteFunctionName(), TypeHelper.getVoid(getTypes()), !field.isStatic(), writeParams, cStrings);
     }
 
     private void generateWriteImpl(StringBuilder out) {
@@ -110,7 +110,7 @@ public class FieldWrapper extends WrappedElement {
             generateWriteImpl(out);
             out.append("\n");
             if (TypeHelper.isString(getTypes(), field.getType())) {
-                generateJStringFunctionOverload(getTypes(), out, generateWriteFunctionName(), field.isStatic(), TypeHelper.getVoid(getTypes()), writeParams);
+                generateJStringFunctionOverload(getTypes(), out, generateWriteFunctionName(), !field.isStatic(), TypeHelper.getVoid(getTypes()), writeParams);
                 out.append("\n");
             }
         }
