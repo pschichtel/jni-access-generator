@@ -72,13 +72,22 @@ public class JNIAccessProcessor extends AbstractProcessor {
             return false;
         }
 
+        final String generatedHeaderName = OUTPUT_FILE_NAME + ".h";
+        final String headerGuard = "_JNI_C_TO_JAVA_INTERFACE";
         StringBuilder headerOutput = new StringBuilder();
+        headerOutput.append("#ifndef ").append(headerGuard).append("\n");
+        headerOutput.append("#define ").append(headerGuard).append("\n\n");
+        headerOutput.append("#include <jni.h>\n");
+        headerOutput.append("\n");
         for (WrappedElement e : wrappedElements) {
             e.generateDeclarations(headerOutput);
         }
-        writeNativeContent(headerOutput, OUTPUT_FILE_NAME + ".h");
+        headerOutput.append("\n#endif\n");
+        writeNativeContent(headerOutput, generatedHeaderName);
 
         StringBuilder implementationOutput = new StringBuilder();
+        implementationOutput.append("#include \"").append(generatedHeaderName).append("\"\n");
+        implementationOutput.append("\n");
         for (WrappedElement e : wrappedElements) {
             e.generateImplementations(implementationOutput);
         }
