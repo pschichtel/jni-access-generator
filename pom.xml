@@ -25,7 +25,7 @@
     <scm>
         <url>https://github.com/pschichtel/jni-access-generator</url>
         <connection>scm:git:https://github.com/pschichtel/jni-access-generator</connection>
-        <developerConnection>scm:git:git@github.com:pschichtel/jin-access-generator</developerConnection>
+        <developerConnection>scm:git:git@github.com:pschichtel/jni-access-generator</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
