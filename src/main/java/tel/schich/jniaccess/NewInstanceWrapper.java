@@ -50,13 +50,12 @@ public class NewInstanceWrapper extends MethodBackedWrapper {
         out.append(" {\n");
         generateClassLookup(out, "class", constructor.getClazz(), "    ");
         out.append('\n');
-        generateMethodLookup(getTypes(), out, "ctor", "class", constructor.getMethod(), "    ");
+        AccessedMethod method = constructor.getMethod();
+        generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
         out.append('\n');
-        out.append("    return (*env)->NewObject(env, class, ctor");
-        for (MethodParam param : constructor.getMethod().getParams()) {
-            out.append(", ").append(param.getName());
-        }
-        out.append(");\n");
+        out.append("    ");
+        generateNewObjectCreation(getTypes(), out, "class", "ctor", method);
+        out.append('\n');
         out.append("}\n");
     }
 }

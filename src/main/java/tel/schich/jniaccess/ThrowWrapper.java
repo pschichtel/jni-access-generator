@@ -24,7 +24,9 @@ package tel.schich.jniaccess;
 
 import javax.lang.model.util.Types;
 
-import static tel.schich.jniaccess.GeneratorHelper.generateClassLookup;
+import java.util.List;
+
+import static tel.schich.jniaccess.GeneratorHelper.*;
 
 
 public class ThrowWrapper extends MethodBackedWrapper {
@@ -46,11 +48,18 @@ public class ThrowWrapper extends MethodBackedWrapper {
         out.append(" {\n");
         generateClassLookup(out, "class", constructor.getClazz(), "    ");
         out.append('\n');
-        out.append("    (*env)->ThrowNew(env, class");
-        for (MethodParam param : constructor.getMethod().getParams()) {
-            out.append(", ").append(param.getName());
+        AccessedMethod method = constructor.getMethod();
+        List<MethodParam> params = method.getParams();
+        if (params.size() == 1 && TypeHelper.isString(getTypes(), params.get(0).getType())) {
+            out.append("    (*env)->ThrowNew(env, class, ").append(params.get(0).getName()).append(");\n");
+        } else {
+            generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
+            out.append('\n');
+            out.append("    jthrowable t = ");
+            generateNewObjectCreation(getTypes(), out, "class", "ctor", method);
+            out.append('\n');
+            out.append("    (*env)->Throw(env, t);\n");
         }
-        out.append(");\n");
         out.append("}\n");
     }
 }

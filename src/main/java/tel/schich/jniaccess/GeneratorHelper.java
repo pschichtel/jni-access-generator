@@ -182,4 +182,12 @@ public abstract class GeneratorHelper {
                 .append(TypeHelper.getJNIType(types, field.getType()))
                 .append("\");");
     }
+
+    public static void generateNewObjectCreation(Types types, StringBuilder out, String classVar, String ctorVar, AccessedMethod method) {
+        out.append("(*env)->NewObject(env, ").append(classVar).append(", ").append(ctorVar);
+        for (MethodParam param : method.getParams()) {
+            out.append(", ").append(param.getName());
+        }
+        out.append(");");
+    }
 }
