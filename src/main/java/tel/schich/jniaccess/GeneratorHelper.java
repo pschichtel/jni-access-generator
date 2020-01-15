@@ -29,7 +29,8 @@ import javax.lang.model.util.Types;
 import java.util.List;
 
 public abstract class GeneratorHelper {
-    public static final String C_STRING_PREFIX = "c_";
+    public static final String C_STRING_PARAMETER_PREFIX = "c_";
+    public static final String C_STRING_FUNCTION_SUFFIX = "_cstr";
 
     private GeneratorHelper() {
 
@@ -52,7 +53,11 @@ public abstract class GeneratorHelper {
 
     public static void generateFunctionSignature(Types types, StringBuilder out, String functionName, TypeMirror returnType, boolean instance, List<MethodParam> params, boolean cStrings) {
         out.append(TypeHelper.getCType(types, returnType)).append(" ");
-        out.append(functionName).append("(JNIEnv *env");
+        out.append(functionName);
+        if (cStrings) {
+            out.append(C_STRING_FUNCTION_SUFFIX);
+        }
+        out.append("(JNIEnv *env");
         if (instance) {
             out.append(", jobject instance");
         }
@@ -94,7 +99,7 @@ public abstract class GeneratorHelper {
         out.append("jstring ")
                 .append(param.getName())
                 .append(" = (*env)->NewStringUTF(env, ")
-                .append(C_STRING_PREFIX)
+                .append(C_STRING_PARAMETER_PREFIX)
                 .append(param.getName())
                 .append(");");
     }
