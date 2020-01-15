@@ -114,6 +114,20 @@ public abstract class GeneratorHelper {
         }
     }
 
+    public static void generateJStringFree(StringBuilder out, MethodParam param) {
+        out.append("(*env)->DeleteLocalRef(env, ").append(param.getName()).append(");");
+    }
+
+    public static void generateJStringFrees(Types types, StringBuilder out, String indention, List<MethodParam> params) {
+        for (MethodParam param : params) {
+            if (TypeHelper.isString(types, param.getType())) {
+                out.append(indention);
+                GeneratorHelper.generateJStringFree(out, param);
+                out.append('\n');
+            }
+        }
+    }
+
     public static void generateJStringFunctionOverloadCall(Types types, StringBuilder out, String indention, String functionName, TypeMirror returnType, boolean instance, List<MethodParam> params) {
         generateJStringConversions(types, out, indention, params);
         out.append(indention);
@@ -128,6 +142,7 @@ public abstract class GeneratorHelper {
             out.append(", ").append(param.getName());
         }
         out.append(");\n");
+        generateJStringFrees(types, out, indention, params);
     }
 
     public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, AccessedMethod method) {
