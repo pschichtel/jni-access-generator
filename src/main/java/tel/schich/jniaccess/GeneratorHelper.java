@@ -141,7 +141,7 @@ public abstract class GeneratorHelper {
         return prefix + "_" + clazz.getElement().getQualifiedName().toString().replace('.', '_');
     }
 
-    public static String functionName(String prefix, AccessedClass clazz, Name name) {
+    public static String functionName(String prefix, AccessedClass clazz, String name) {
         return functionName(prefix, clazz) + "_" + name;
     }
 

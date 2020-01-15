@@ -22,62 +22,51 @@
  */
 package tel.schich.jniaccess;
 
-import javax.lang.model.element.Name;
 import javax.lang.model.util.Types;
 
 import static tel.schich.jniaccess.GeneratorHelper.*;
 
-public class MethodCallWrapper extends WrappedElement {
+public class MethodCallWrapper extends MethodBackedWrapper {
     private final AccessedClass clazz;
     private final AccessedMethod method;
 
     public MethodCallWrapper(Types types, boolean performanceCritical, AccessedClass clazz, AccessedMethod method) {
-        super(types, performanceCritical);
+        super(types, performanceCritical, method);
         this.clazz = clazz;
         this.method = method;
     }
 
-    private String generateFunctionName() {
-        return GeneratorHelper.functionName("call", clazz, method.getElement().getSimpleName());
+    @Override
+    protected String generateFunctionName() {
+        return GeneratorHelper.functionName("call", clazz, method.getName());
     }
 
-    private void generateSig(StringBuilder out, boolean cStrings) {
-        generateFunctionSignature(getTypes(), out, method, generateFunctionName(), cStrings);
-    }
-
-    private void generateImpl(StringBuilder out) {
-        String lookup = method.isStatic() ? "GetStaticMethodID" : "GetMethodID";
-        Name methodName = method.getElement().getSimpleName();
-        String accessorType = TypeHelper.getJNIHelperType(method.getElement().getReturnType());
-
+    @Override
+    protected void generateImpl(StringBuilder out) {
         generateSig(out, false);
         out.append(" {\n");
         generateClassLookup(out, "class", clazz, "    ");
         out.append('\n');
-        out.append("    jmethodID method = (*env)->").append(lookup).append("(env, class, \"").append(methodName).append("\", \"");
-        GeneratorHelper.generateJniMethodSignature(out, getTypes(), method);
-        out.append("\");\n");
+        out.append("    jmethodID method = (*env)->Get");
         if (method.isStatic()) {
-            out.append("    return (*env)->CallStatic").append(accessorType).append("Method(env, class, method");
-        } else {
-            out.append("    return (*env)->Call").append(accessorType).append("Method(env, instance, method");
+            out.append("Static");
         }
+        out.append("MethodID(env, class, \"");
+        out.append(method.getName()).append("\", \"");
+        generateJniMethodSignature(out, getTypes(), method);
+        out.append("\");\n");
+        out.append("    return (*env)->Call");
+        if (method.isStatic()) {
+            out.append("Static");
+        }
+        out.append(TypeHelper.getJNIHelperType(method.getElement().getReturnType()));
+        out.append("Method(env, ");
+        out.append(method.isStatic() ? "class" : "instance");
+        out.append(", method");
         for (MethodParam param : method.getParams()) {
             out.append(", ").append(param.getName());
         }
         out.append(");\n");
         out.append("}\n");
-    }
-
-    @Override
-    public void generateDeclarations(StringBuilder out) {
-        generateSig(out, false);
-        out.append(";\n\n");
-    }
-
-    @Override
-    public void generateImplementations(StringBuilder out) {
-        generateImpl(out);
-        out.append("\n\n");
     }
 }

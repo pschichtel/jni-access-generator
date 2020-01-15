@@ -26,37 +26,42 @@ import javax.lang.model.util.Types;
 
 import static tel.schich.jniaccess.GeneratorHelper.*;
 
-public class NewInstanceWrapper extends MethodBackedWrapper {
-    private final ConstructorCall constructor;
+public abstract class MethodBackedWrapper extends WrappedElement {
 
-    public NewInstanceWrapper(Types types, boolean performanceCritical, ConstructorCall constructor) {
-        super(types, performanceCritical, constructor.getMethod());
-        this.constructor = constructor;
+    private final AccessedMethod method;
+
+    public MethodBackedWrapper(Types types, boolean performanceCritical, AccessedMethod method) {
+        super(types, performanceCritical);
+        this.method = method;
     }
 
-    @Override
-    protected String generateFunctionName() {
-        return GeneratorHelper.functionName("create", constructor.getClazz());
-    }
+    protected abstract String generateFunctionName();
 
-    @Override
     protected void generateSig(StringBuilder out, boolean cStrings) {
-        generateFunctionSignature(getTypes(), out, constructor.getMethod(), constructor.getClazz().getType(), generateFunctionName(), cStrings);
+        generateFunctionSignature(getTypes(), out, method, generateFunctionName(), cStrings);
+    }
+
+    protected abstract void generateImpl(StringBuilder out);
+
+    @Override
+    public void generateDeclarations(StringBuilder out) {
+        generateSig(out, false);
+        out.append(";\n");
+        if (hasStringParameter(getTypes(), method)) {
+            generateSig(out, true);
+            out.append(";\n");
+        }
+        out.append("\n");
     }
 
     @Override
-    protected void generateImpl(StringBuilder out) {
-        generateSig(out, false);
-        out.append(" {\n");
-        generateClassLookup(out, "class", constructor.getClazz(), "    ");
-        out.append('\n');
-        generateMethodLookup(getTypes(), out, "ctor", "class", constructor.getMethod(), "    ");
-        out.append('\n');
-        out.append("    return (*env)->NewObject(env, class, ctor");
-        for (MethodParam param : constructor.getMethod().getParams()) {
-            out.append(", ").append(param.getName());
+    public void generateImplementations(StringBuilder out) {
+        generateImpl(out);
+        out.append("\n");
+        if (hasStringParameter(getTypes(), method)) {
+            generateJStringFunctionOverload(getTypes(), out, generateFunctionName(), method);
+            out.append("\n");
         }
-        out.append(");\n");
-        out.append("}\n");
+        out.append("\n");
     }
 }

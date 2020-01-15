@@ -24,25 +24,24 @@ package tel.schich.jniaccess;
 
 import javax.lang.model.util.Types;
 
-import static tel.schich.jniaccess.GeneratorHelper.*;
+import static tel.schich.jniaccess.GeneratorHelper.generateClassLookup;
 
-public class ThrowWrapper extends WrappedElement {
+
+public class ThrowWrapper extends MethodBackedWrapper {
     private final ConstructorCall constructor;
 
     public ThrowWrapper(Types types, boolean performanceCritical, ConstructorCall constructor) {
-        super(types, performanceCritical);
+        super(types, performanceCritical, constructor.getMethod());
         this.constructor = constructor;
     }
 
-    private String generateFunctionName() {
+    @Override
+    protected String generateFunctionName() {
         return GeneratorHelper.functionName("throw", constructor.getClazz());
     }
 
-    private void generateSig(StringBuilder out, boolean cStrings) {
-        generateFunctionSignature(getTypes(), out, constructor.getMethod(), generateFunctionName(), cStrings);
-    }
-
-    private void generateImpl(StringBuilder out) {
+    @Override
+    protected void generateImpl(StringBuilder out) {
         generateSig(out, false);
         out.append(" {\n");
         generateClassLookup(out, "class", constructor.getClazz(), "    ");
@@ -53,27 +52,5 @@ public class ThrowWrapper extends WrappedElement {
         }
         out.append(");\n");
         out.append("}\n");
-    }
-
-    @Override
-    public void generateDeclarations(StringBuilder out) {
-        generateSig(out, false);
-        out.append(";\n");
-        if (hasStringParameter(getTypes(), constructor.getMethod())) {
-            generateSig(out, true);
-            out.append(";\n");
-        }
-        out.append("\n");
-    }
-
-    @Override
-    public void generateImplementations(StringBuilder out) {
-        generateImpl(out);
-        out.append("\n");
-        if (hasStringParameter(getTypes(), constructor.getMethod())) {
-            generateJStringFunctionOverload(getTypes(), out, generateFunctionName(), constructor.getMethod());
-            out.append("\n");
-        }
-        out.append("\n");
     }
 }

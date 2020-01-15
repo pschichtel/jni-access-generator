@@ -42,30 +42,18 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateReadSig(StringBuilder out) {
-        String name = GeneratorHelper.functionName("read", clazz, field.getElement().getSimpleName());
+        String name = GeneratorHelper.functionName("read", clazz, field.getName());
 
         generateFunctionSignature(getTypes(), out, name, field.getType(), field.isStatic(), Collections.emptyList(), false);
     }
 
     private void generateReadImpl(StringBuilder out) {
-        String accessorType = TypeHelper.getJNIHelperType(field.getType());
-
         generateReadSig(out);
-        out.append(" {\n");
-        generateClassLookup(out, "class", clazz, "    ");
-        out.append('\n');
-        generateFieldLookup(getTypes(), out, "field", "class", field, "    ");
-        out.append('\n');
-        if (field.isStatic()) {
-            out.append("    return (*env)->GetStatic").append(accessorType).append("Field(env, class, field);\n");
-        } else {
-            out.append("    return (*env)->Get").append(accessorType).append("Field(env, instance, field);\n");
-        }
-        out.append("}\n");
+        generateImplBody(out, false);
     }
 
     private String generateWriteFunctionName() {
-        return GeneratorHelper.functionName("write", clazz, field.getElement().getSimpleName());
+        return GeneratorHelper.functionName("write", clazz, field.getName());
     }
 
     private void generateWriteSig(StringBuilder out, boolean cStrings) {
@@ -73,19 +61,29 @@ public class FieldWrapper extends WrappedElement {
     }
 
     private void generateWriteImpl(StringBuilder out) {
-        String accessorType = TypeHelper.getJNIHelperType(field.getType());
-
         generateWriteSig(out, false);
+        generateImplBody(out, true);
+    }
+
+    private void generateImplBody(StringBuilder out, boolean set) {
         out.append(" {\n");
         generateClassLookup(out, "class", clazz, "    ");
         out.append('\n');
         generateFieldLookup(getTypes(), out, "field", "class", field, "    ");
         out.append('\n');
+        out.append("    (*env)->");
+        out.append(set ? "Set" : "Get");
         if (field.isStatic()) {
-            out.append("    (*env)->SetStatic").append(accessorType).append("Field(env, class, field, value);\n");
-        } else {
-            out.append("    (*env)->Set").append(accessorType).append("Field(env, instance, field, value);\n");
+            out.append("Static");
         }
+        out.append(TypeHelper.getJNIHelperType(field.getType()));
+        out.append("Field(env, ");
+        out.append(field.isStatic() ? "class" : "instance");
+        out.append(", field");
+        if (set) {
+            out.append(", value");
+        }
+        out.append(");\n");
         out.append("}\n");
     }
 
