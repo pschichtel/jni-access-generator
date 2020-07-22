@@ -61,6 +61,22 @@ public abstract class GeneratorHelper {
         if (instance) {
             out.append(", jobject instance");
         }
+        generateFunctionSignatureParameters(types, out, params, cStrings);
+        out.append(")");
+    }
+
+    public static void generateExternFunctionSignature(Types types, StringBuilder out, String functionName, TypeMirror returnType, boolean instance, List<MethodParam> params) {
+        out.append("JNIEXPORT ");
+        out.append(TypeHelper.getCType(types, returnType)).append(" ");
+        out.append("JNICALL ");
+        out.append(functionName);
+        out.append("(JNIEnv *env");
+        out.append(", ").append(instance ? "jobject instance" : "jclass clazz");
+        generateFunctionSignatureParameters(types, out, params, false);
+        out.append(");");
+    }
+
+    private static void generateFunctionSignatureParameters(Types types, StringBuilder out, List<MethodParam> params, boolean cStrings) {
         for (MethodParam param : params) {
             final TypeMirror type = param.getType();
             final String cType;
@@ -74,7 +90,6 @@ public abstract class GeneratorHelper {
             }
             out.append(", ").append(cType).append(' ').append(name);
         }
-        out.append(")");
     }
 
     public static void generateJniMethodSignature(StringBuilder out, Types types, AccessedMethod method) {
