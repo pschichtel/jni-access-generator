@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
 
-import static java.util.stream.Collectors.groupingBy;
-
 public class JNIAccessProcessor extends AbstractProcessor {
     private static final Set<String> SUPPORTED_ANNOTATIONS = Collections.singleton(JNIAccess.class.getCanonicalName());
     private static final String OUTPUT_FILE_NAME = "jni-c-to-java";
@@ -52,12 +50,13 @@ public class JNIAccessProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Map<Element, List<ExecutableElement>> nativeMethods = NativeInterfaceGenerator.searchNativeMethods(roundEnv)
-                .stream()
-                .collect(groupingBy(Element::getEnclosingElement));
-        nativeMethods.forEach((clazz, methods) -> {
-            System.out.println(NativeInterfaceGenerator.buildFullyQualifiedElementName(clazz));
-            for (ExecutableElement executable : methods) {
+        List<NativeInterfaceGenerator.ClassWithNatives> nativeMethods = NativeInterfaceGenerator.searchNativeMethods(roundEnv);
+        nativeMethods.forEach((clazz) -> {
+            System.out.println(NativeInterfaceGenerator.buildFullyQualifiedElementName(clazz.getTheClass()));
+            for (VariableElement constant : clazz.getConstants()) {
+                System.out.println("    " + NativeInterfaceGenerator.buildFullyQualifiedElementName(constant) + " = " + constant.getConstantValue());
+            }
+            for (ExecutableElement executable : clazz.getMethods()) {
                 System.out.println("    " + NativeInterfaceGenerator.buildFullyQualifiedElementName(executable));
             }
         });
