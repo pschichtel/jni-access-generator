@@ -22,8 +22,6 @@
  */
 package tel.schich.jniaccess;
 
-import sun.rmi.runtime.RuntimeUtil;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
@@ -36,7 +34,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -147,13 +144,39 @@ public class JNIAccessProcessor extends AbstractProcessor {
         } else if (value instanceof Float) {
             cValue = value + "f";
         } else if (value instanceof Character) {
-            cValue = "'" + value + "'"; // TODO escaping
+            final char c = (Character) value;
+            cValue = "L'" + escapeChar(c) + "'";
         } else if (value instanceof String) {
-            cValue = "\"" + value + "\""; // TODO escaping
+            cValue = "L\"" + escapeString((String) value) + "\"";
         } else {
             cValue = String.valueOf(value);
         }
         out.append("#define ").append(name).append(' ').append(cValue);
+    }
+
+    private static String escapeString(String s) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < s.length(); ++i) {
+            out.append(escapeChar(s.charAt(i)));
+        }
+        return out.toString();
+    }
+
+    private static String escapeChar(char c) {
+        if (c == '\0') {
+            return "\\0";
+        }
+        if (c == '\'') {
+            return "\\'";
+        }
+        if (c == '"') {
+            return "\\\"";
+        }
+        if (Character.isISOControl(c)) {
+            return "\\n" + ((int) c);
+        } else {
+            return String.valueOf(c);
+        }
     }
 
     private void generateExternPrototype(StringBuilder out, ExecutableElement method) {
