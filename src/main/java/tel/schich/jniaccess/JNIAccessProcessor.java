@@ -86,7 +86,7 @@ public class JNIAccessProcessor extends AbstractProcessor {
         }
         File file = new File(outputLocation);
         if (!file.exists()) {
-            if (!file.mkdir()) {
+            if (!file.mkdirs()) {
                 return null;
             }
         }
