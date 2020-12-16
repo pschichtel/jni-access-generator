@@ -94,11 +94,15 @@ public abstract class GeneratorHelper {
 
     public static void generateJniMethodSignature(StringBuilder out, Types types, AccessedMethod method) {
         out.append('(');
-        for (MethodParam param : method.getParams()) {
-            out.append(TypeHelper.getJNIType(types, param.getType()));
-        }
+        generateJniMethodParametersSignature(out, types, method.getParams());
         out.append(')');
         out.append(TypeHelper.getJNIType(types, method.getElement().getReturnType()));
+    }
+
+    public static void generateJniMethodParametersSignature(StringBuilder out, Types types, List<MethodParam> params) {
+        for (MethodParam param : params) {
+            out.append(TypeHelper.getJNIType(types, param.getType()));
+        }
     }
 
     public static boolean hasStringParameter(Types types, AccessedMethod method) {
@@ -213,7 +217,7 @@ public abstract class GeneratorHelper {
                 .append("\");");
     }
 
-    public static void generateNewObjectCreation(Types types, StringBuilder out, String classVar, String ctorVar, AccessedMethod method) {
+    public static void generateNewObjectCreation(StringBuilder out, String classVar, String ctorVar, AccessedMethod method) {
         out.append("(*env)->NewObject(env, ").append(classVar).append(", ").append(ctorVar);
         for (MethodParam param : method.getParams()) {
             out.append(", ").append(param.getName());

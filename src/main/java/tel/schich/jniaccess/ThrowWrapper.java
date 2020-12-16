@@ -56,7 +56,7 @@ public class ThrowWrapper extends MethodBackedWrapper {
             generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
             out.append('\n');
             out.append("    jthrowable t = ");
-            generateNewObjectCreation(getTypes(), out, "class", "ctor", method);
+            generateNewObjectCreation(out, "class", "ctor", method);
             out.append('\n');
             out.append("    (*env)->Throw(env, t);\n");
         }

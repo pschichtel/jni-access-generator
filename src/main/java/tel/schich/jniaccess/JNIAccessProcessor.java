@@ -40,6 +40,7 @@ import java.util.function.Consumer;
 import static java.lang.Boolean.parseBoolean;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
+import static tel.schich.jniaccess.GeneratorHelper.generateJniMethodParametersSignature;
 import static tel.schich.jniaccess.NativeInterfaceGenerator.buildFullyQualifiedElementName;
 
 public class JNIAccessProcessor extends AbstractProcessor {
@@ -121,8 +122,16 @@ public class JNIAccessProcessor extends AbstractProcessor {
                     out.append('\n');
                 }
                 out.append('\n');
-                for (ExecutableElement method : clazz.getMethods()) {
-                    generateExternPrototype(out, method);
+
+                final List<ExecutableElement> methods = clazz.getMethods();
+                Map<Name, Boolean> overloadedLookup = new HashMap<>();
+                for (ExecutableElement method : methods) {
+                    final Name methodName = method.getSimpleName();
+                    overloadedLookup.put(methodName, overloadedLookup.containsKey(methodName));
+                }
+
+                for (ExecutableElement method : methods) {
+                    generateExternPrototype(out, method, overloadedLookup.getOrDefault(method.getSimpleName(), false));
                     out.append('\n');
                     out.append('\n');
                 }
@@ -179,13 +188,59 @@ public class JNIAccessProcessor extends AbstractProcessor {
         }
     }
 
-    private void generateExternPrototype(StringBuilder out, ExecutableElement method) {
-        final String name = "Java_" + buildFullyQualifiedElementName(method).replace('.', '_');
+    private void generateExternPrototype(StringBuilder out, ExecutableElement method, boolean overloaded) {
+        Types types = processingEnv.getTypeUtils();
+        final String name = buildMangledName(types, method, overloaded);
         final boolean instance = !method.getModifiers().contains(Modifier.STATIC);
 
         List<MethodParam> params = getParams(method);
 
         GeneratorHelper.generateExternFunctionSignature(processingEnv.getTypeUtils(), out, name, method.getReturnType(), instance, params);
+    }
+
+    /**
+     * See https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#resolving_native_method_names
+     */
+    private static String buildMangledName(Types types, ExecutableElement method, boolean overloaded) {
+        final String qualifiedName = buildFullyQualifiedElementName(method);
+        StringBuilder mangled = new StringBuilder();
+        final String[] segments = qualifiedName.split("\\.");
+
+        mangled.append("Java");
+        for (String segment : segments) {
+            mangled.append('_');
+
+            for (int i = 0; i < segment.length(); ++i) {
+                char c = segment.charAt(i);
+                switch (c) {
+                    case '_':
+                        mangled.append("_1");
+                        break;
+                    case ';':
+                        mangled.append("_2");
+                        break;
+                    case '[':
+                        mangled.append("_3");
+                        break;
+                    default:
+                        if (Character.isLetterOrDigit(c)) {
+                            mangled.append(c);
+                        } else {
+                            mangled.append("_0");
+                            if ((int) c < 128) {
+                                mangled.append(String.format("%04X", (int) c));
+                            } else {
+                                mangled.append(String.format("%04x", (int) c));
+                            }
+                        }
+                }
+            }
+        }
+        if (overloaded) {
+            mangled.append("__");
+            generateJniMethodParametersSignature(mangled, types, getParams(method));
+        }
+        return mangled.toString();
     }
 
     private boolean generateNativeToJavaInterface(RoundEnvironment roundEnv) {

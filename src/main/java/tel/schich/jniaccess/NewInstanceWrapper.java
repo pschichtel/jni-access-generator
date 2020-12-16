@@ -54,7 +54,7 @@ public class NewInstanceWrapper extends MethodBackedWrapper {
         generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
         out.append('\n');
         out.append("    ");
-        generateNewObjectCreation(getTypes(), out, "class", "ctor", method);
+        generateNewObjectCreation(out, "class", "ctor", method);
         out.append('\n');
         out.append("}\n");
     }
