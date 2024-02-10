@@ -53,7 +53,7 @@ public class NewInstanceWrapper extends MethodBackedWrapper {
         AccessedMethod method = constructor.getMethod();
         generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
         out.append('\n');
-        out.append("    ");
+        out.append("    return ");
         generateNewObjectCreation(out, "class", "ctor", method);
         out.append('\n');
         out.append("}\n");
