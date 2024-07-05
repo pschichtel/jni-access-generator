@@ -22,6 +22,7 @@
  */
 package tel.schich.jniaccess;
 
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Types;
 
 import static tel.schich.jniaccess.GeneratorHelper.*;
@@ -55,7 +56,11 @@ public class MethodCallWrapper extends MethodBackedWrapper {
         out.append(method.getName()).append("\", \"");
         generateJniMethodSignature(out, getTypes(), method);
         out.append("\");\n");
-        out.append("    return (*env)->Call");
+        out.append("    ");
+        if (method.getElement().getReturnType().getKind() != TypeKind.VOID) {
+            out.append("return ");
+        }
+        out.append("(*env)->Call");
         if (method.isStatic()) {
             out.append("Static");
         }
