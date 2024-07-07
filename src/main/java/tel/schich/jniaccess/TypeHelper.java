@@ -82,7 +82,7 @@ public abstract class TypeHelper {
             case ARRAY:
                 return "[" + getJNIType(typeUtils, ((ArrayType) type).getComponentType());
             default:
-                throw new IllegalArgumentException("Unsupported type!");
+                throw new IllegalArgumentException("Unsupported type: " + type.getKind());
         }
     }
 
