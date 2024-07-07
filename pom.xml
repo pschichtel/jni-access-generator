@@ -10,7 +10,7 @@
 
     <groupId>tel.schich</groupId>
     <artifactId>jni-access-generator</artifactId>
-    <version>1.1.4-SNAPSHOT</version>
+    <version>1.1.4</version>
     <name>JNI Accessor Generator</name>
     <url>https://github.com/pschichtel/jni-access-generator</url>
     <inceptionYear>2020</inceptionYear>
@@ -26,7 +26,7 @@
         <url>https://github.com/pschichtel/jni-access-generator</url>
         <connection>scm:git:https://github.com/pschichtel/jni-access-generator</connection>
         <developerConnection>scm:git:git@github.com:pschichtel/jni-access-generator</developerConnection>
-        <tag>HEAD</tag>
+        <tag>jni-access-generator-1.1.4</tag>
     </scm>
 
     <developers>
