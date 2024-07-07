@@ -26,7 +26,9 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
+import java.lang.reflect.Parameter;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class GeneratorHelper {
     public static final String C_STRING_PARAMETER_PREFIX = "c_";
@@ -147,11 +149,31 @@ public abstract class GeneratorHelper {
         }
     }
 
+    private static boolean symbolConflictsWithParameter(String symbol, List<MethodParam> params) {
+        for (MethodParam param : params) {
+            if (Objects.equals(symbol, param.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String deconflictSymbol(String symbol, List<MethodParam> params) {
+        while (symbolConflictsWithParameter(symbol, params)) {
+            symbol += "_";
+        }
+        return symbol;
+    }
+
     public static void generateJStringFunctionOverloadCall(Types types, StringBuilder out, String indention, String functionName, TypeMirror returnType, boolean instance, List<MethodParam> params) {
         generateJStringConversions(types, out, indention, params);
         out.append(indention);
+        String resultSymbol = deconflictSymbol("result", params);
         if (returnType.getKind() != TypeKind.VOID) {
-            out.append("return ");
+            out.append(TypeHelper.getCType(types, returnType));
+            out.append(" ");
+            out.append(resultSymbol);
+            out.append(" = ");
         }
         out.append(functionName).append("(env");
         if (instance) {
@@ -162,6 +184,12 @@ public abstract class GeneratorHelper {
         }
         out.append(");\n");
         generateJStringFrees(types, out, indention, params);
+        if (returnType.getKind() != TypeKind.VOID) {
+            out.append(indention);
+            out.append("return ");
+            out.append(resultSymbol);
+            out.append(";\n");
+        }
     }
 
     public static void generateJStringFunctionOverload(Types types, StringBuilder out, String functionName, AccessedMethod method) {
