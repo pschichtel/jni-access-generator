@@ -44,14 +44,15 @@ public class ThrowWrapper extends MethodBackedWrapper {
 
     @Override
     protected void generateImpl(StringBuilder out) {
-        generateSig(out, false);
+        AccessedMethod method = constructor.getMethod();
+        List<MethodParam> params = method.getParams();
+        final boolean singleStringParam = params.size() == 1 && TypeHelper.isString(getTypes(), params.get(0).getType());
+        generateSig(out, singleStringParam);
         out.append(" {\n");
         generateClassLookup(out, "class", constructor.getClazz(), "    ");
         out.append('\n');
-        AccessedMethod method = constructor.getMethod();
-        List<MethodParam> params = method.getParams();
-        if (params.size() == 1 && TypeHelper.isString(getTypes(), params.get(0).getType())) {
-            out.append("    (*env)->ThrowNew(env, class, ").append(params.get(0).getName()).append(");\n");
+        if (singleStringParam) {
+            out.append("    (*env)->ThrowNew(env, class, ").append(cStringName(params.get(0))).append(");\n");
         } else {
             generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
             out.append('\n');
@@ -61,5 +62,11 @@ public class ThrowWrapper extends MethodBackedWrapper {
             out.append("    (*env)->Throw(env, t);\n");
         }
         out.append("}\n");
+    }
+
+    @Override
+    public void generateImplementations(StringBuilder out) {
+        generateBaseImplementation(out);
+        out.append("\n");
     }
 }

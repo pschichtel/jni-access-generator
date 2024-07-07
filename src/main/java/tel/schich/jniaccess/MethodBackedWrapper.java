@@ -54,14 +54,22 @@ public abstract class MethodBackedWrapper extends WrappedElement {
         out.append("\n");
     }
 
-    @Override
-    public void generateImplementations(StringBuilder out) {
+    protected void generateBaseImplementation(StringBuilder out) {
         generateImpl(out);
         out.append("\n");
+    }
+
+    protected void generateCStringImplementation(StringBuilder out) {
         if (hasStringParameter(getTypes(), method)) {
             generateJStringFunctionOverload(getTypes(), out, generateFunctionName(), method);
             out.append("\n");
         }
+    }
+
+    @Override
+    public void generateImplementations(StringBuilder out) {
+        generateBaseImplementation(out);
+        generateCStringImplementation(out);
         out.append("\n");
     }
 }

@@ -116,12 +116,15 @@ public abstract class GeneratorHelper {
         return false;
     }
 
+    public static String cStringName(MethodParam param) {
+        return C_STRING_PARAMETER_PREFIX + param.getName();
+    }
+
     public static void generateJStringConversion(StringBuilder out, MethodParam param) {
         out.append("jstring ")
                 .append(param.getName())
                 .append(" = (*env)->NewStringUTF(env, ")
-                .append(C_STRING_PARAMETER_PREFIX)
-                .append(param.getName())
+                .append(cStringName(param))
                 .append(");");
     }
 
