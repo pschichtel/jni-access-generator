@@ -84,7 +84,7 @@ public abstract class GeneratorHelper {
             final String cType;
             final String name;
             if (cStrings && TypeHelper.isInstanceOf(types, type, String.class)) {
-                cType = "char*";
+                cType = "const char*";
                 name = "c_" + param.getName();
             } else {
                 cType = TypeHelper.getCType(types, type);
