@@ -26,9 +26,9 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
-import java.lang.reflect.Parameter;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 public abstract class GeneratorHelper {
     public static final String C_STRING_PARAMETER_PREFIX = "c_";
@@ -254,5 +254,19 @@ public abstract class GeneratorHelper {
             out.append(", ").append(param.getName());
         }
         out.append(");");
+    }
+
+    public static void generateInstantiatingMethod(StringBuilder out, MethodBackedWrapper wrapper, ConstructorCall ctor, BiConsumer<String, String> use) {
+        wrapper.generateSig(out, false);
+        out.append(" {\n");
+        final String classSymbol = "class";
+        generateClassLookup(out, classSymbol, ctor.getClazz(), "    ");
+        out.append('\n');
+        AccessedMethod method = ctor.getMethod();
+        final String instanceSymbol = "ctor";
+        generateMethodLookup(wrapper.getTypes(), out, instanceSymbol, classSymbol, method, "    ");
+        out.append('\n');
+        use.accept(classSymbol, instanceSymbol);
+        out.append("}\n");
     }
 }

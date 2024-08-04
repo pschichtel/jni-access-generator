@@ -46,16 +46,10 @@ public class NewInstanceWrapper extends MethodBackedWrapper {
 
     @Override
     protected void generateImpl(StringBuilder out) {
-        generateSig(out, false);
-        out.append(" {\n");
-        generateClassLookup(out, "class", constructor.getClazz(), "    ");
-        out.append('\n');
-        AccessedMethod method = constructor.getMethod();
-        generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
-        out.append('\n');
-        out.append("    return ");
-        generateNewObjectCreation(out, "class", "ctor", method);
-        out.append('\n');
-        out.append("}\n");
+        generateInstantiatingMethod(out, this, constructor, (clazz, instance) -> {
+            out.append("    return ");
+            generateNewObjectCreation(out, clazz, instance, constructor.getMethod());
+            out.append('\n');
+        });
     }
 }

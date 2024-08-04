@@ -44,7 +44,7 @@ public abstract class MethodBackedWrapper extends WrappedElement {
     protected abstract void generateImpl(StringBuilder out);
 
     @Override
-    public void generateDeclarations(StringBuilder out) {
+    public final void generateDeclarations(StringBuilder out) {
         generateSig(out, false);
         out.append(";\n");
         if (hasStringParameter(getTypes(), method)) {

@@ -44,29 +44,28 @@ public class ThrowWrapper extends MethodBackedWrapper {
 
     @Override
     protected void generateImpl(StringBuilder out) {
-        AccessedMethod method = constructor.getMethod();
-        List<MethodParam> params = method.getParams();
-        final boolean singleStringParam = params.size() == 1 && TypeHelper.isString(getTypes(), params.get(0).getType());
-        generateSig(out, singleStringParam);
-        out.append(" {\n");
-        generateClassLookup(out, "class", constructor.getClazz(), "    ");
-        out.append('\n');
-        if (singleStringParam) {
-            out.append("    (*env)->ThrowNew(env, class, ").append(cStringName(params.get(0))).append(");\n");
-        } else {
-            generateMethodLookup(getTypes(), out, "ctor", "class", method, "    ");
-            out.append('\n');
+        generateInstantiatingMethod(out, this, constructor, (clazz, instance) -> {
             out.append("    jthrowable t = ");
-            generateNewObjectCreation(out, "class", "ctor", method);
+            generateNewObjectCreation(out, clazz, instance, constructor.getMethod());
             out.append('\n');
             out.append("    (*env)->Throw(env, t);\n");
-        }
-        out.append("}\n");
+        });
     }
 
     @Override
-    public void generateImplementations(StringBuilder out) {
-        generateBaseImplementation(out);
-        out.append("\n");
+    protected void generateCStringImplementation(StringBuilder out) {
+        AccessedMethod method = constructor.getMethod();
+        List<MethodParam> params = method.getParams();
+        final boolean singleStringParam = params.size() == 1 && TypeHelper.isString(getTypes(), params.get(0).getType());
+        if (singleStringParam) {
+            generateSig(out, true);
+            out.append(" {\n");
+            generateClassLookup(out, "class", constructor.getClazz(), "    ");
+            out.append('\n');
+            out.append("    (*env)->ThrowNew(env, class, ").append(cStringName(params.get(0))).append(");\n");
+            out.append("}\n");
+        } else {
+            generateJStringFunctionOverload(getTypes(), out, generateFunctionName(), method);
+        }
     }
 }
