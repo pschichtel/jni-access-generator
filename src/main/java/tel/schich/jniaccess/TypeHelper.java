@@ -104,6 +104,8 @@ public abstract class TypeHelper {
                 return "Float";
             case DOUBLE:
                 return "Double";
+            case VOID:
+                return "Void";
             default:
                 return "Object";
         }
