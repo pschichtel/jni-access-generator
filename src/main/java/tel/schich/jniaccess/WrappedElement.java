@@ -26,21 +26,22 @@ import javax.lang.model.util.Types;
 
 public abstract class WrappedElement {
     private final Types types;
-    private final boolean performanceCritical;
+    private final CacheMode cacheMode;
 
-    public WrappedElement(Types types, boolean performanceCritical) {
+    public WrappedElement(Types types, CacheMode cacheMode) {
         this.types = types;
-        this.performanceCritical = performanceCritical;
+        this.cacheMode = cacheMode;
     }
 
     public Types getTypes() {
         return types;
     }
 
-    public boolean isPerformanceCritical() {
-        return performanceCritical;
+    public CacheMode getCacheMode() {
+        return cacheMode;
     }
 
+    public abstract AccessedClass getHostClass();
     public abstract void generateDeclarations(StringBuilder out);
     public abstract void generateImplementations(StringBuilder out);
 }

@@ -29,9 +29,14 @@ import static tel.schich.jniaccess.GeneratorHelper.*;
 public class NewInstanceWrapper extends MethodBackedWrapper {
     private final ConstructorCall constructor;
 
-    public NewInstanceWrapper(Types types, boolean performanceCritical, ConstructorCall constructor) {
-        super(types, performanceCritical, constructor.getMethod());
+    public NewInstanceWrapper(Types types, CacheMode cacheMode, ConstructorCall constructor) {
+        super(types, cacheMode, constructor.getMethod());
         this.constructor = constructor;
+    }
+
+    @Override
+    public AccessedClass getHostClass() {
+        return constructor.getClazz();
     }
 
     @Override

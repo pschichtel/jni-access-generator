@@ -46,11 +46,15 @@ import static tel.schich.jniaccess.NativeInterfaceGenerator.buildFullyQualifiedE
 public class JNIAccessProcessor extends AbstractProcessor {
 
     private static final String OPTION_GENERATE_JNI_HEADERS = "generate.jni.headers";
+    private static final String OPTION_GENERATE_CACHE_MODE_DEFAULT = "generate.cache.mode.default";
+    private static final String OPTION_GENERATE_MODULE_NAMESPACE = "generate.module.namespace";
     private static final String OPTION_OUTPUT_LOCATION = "output.location";
 
     private static final Set<String> SUPPORTED_ANNOTATIONS = Collections.singleton(JNIAccess.class.getCanonicalName());
     private static final Set<String> SUPPORTED_OPTIONS = unmodifiableSet(new HashSet<>(asList(
             OPTION_GENERATE_JNI_HEADERS,
+            OPTION_GENERATE_CACHE_MODE_DEFAULT,
+            OPTION_GENERATE_MODULE_NAMESPACE,
             OPTION_OUTPUT_LOCATION
     )));
 
@@ -78,6 +82,19 @@ public class JNIAccessProcessor extends AbstractProcessor {
 
     private boolean shouldGenerateJniHeaders() {
         return parseBoolean(processingEnv.getOptions().getOrDefault(OPTION_GENERATE_JNI_HEADERS, "false"));
+    }
+
+    private String getModuleNamespace() {
+        return processingEnv.getOptions().getOrDefault(OPTION_GENERATE_MODULE_NAMESPACE, "module_");
+    }
+
+    private CacheMode getDefaultCacheMode() {
+        final CacheMode def = CacheMode.NONE;
+        final CacheMode mode = CacheMode.valueOf(processingEnv.getOptions().getOrDefault(OPTION_GENERATE_CACHE_MODE_DEFAULT, def.name()));
+        if (mode == CacheMode.DEFAULT) {
+            return def;
+        }
+        return mode;
     }
 
     private File getOutputLocation() {
@@ -245,19 +262,23 @@ public class JNIAccessProcessor extends AbstractProcessor {
 
     private boolean generateNativeToJavaInterface(RoundEnvironment roundEnv) {
 
+        final CacheMode defaultCacheMode = getDefaultCacheMode();
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(JNIAccess.class);
         List<WrappedElement> wrappedElements = new ArrayList<>();
         for (Element annotatedElement : annotatedElements) {
-            boolean performanceCritical = annotatedElement.getAnnotation(PerformanceCritical.class) != null;
+            CacheMode cacheMode = annotatedElement.getAnnotation(JNIAccess.class).cacheMode();
+            if (cacheMode == CacheMode.DEFAULT) {
+                cacheMode = defaultCacheMode;
+            }
             switch (annotatedElement.getKind()) {
                 case CONSTRUCTOR:
-                    wrappedElements.add(processConstructor(annotatedElement, performanceCritical));
+                    wrappedElements.add(processConstructor(annotatedElement, cacheMode));
                     break;
                 case METHOD:
-                    wrappedElements.add(processMethod(annotatedElement, performanceCritical));
+                    wrappedElements.add(processMethod(annotatedElement, cacheMode));
                     break;
                 case FIELD:
-                    wrappedElements.add(processField(annotatedElement, performanceCritical));
+                    wrappedElements.add(processField(annotatedElement, cacheMode));
                     break;
                 default:
             }
@@ -269,8 +290,10 @@ public class JNIAccessProcessor extends AbstractProcessor {
 
         final String fileName = "jni-c-to-java";
         final String headerGuard = "_JNI_C_TO_JAVA_INTERFACE";
+        final String moduleNamespace = getModuleNamespace();
 
         final CharSequence headerContent = generateHeader(headerGuard, headerOutput -> {
+            ModuleLifecycle.generateModuleLifecycleHeaders(headerOutput, moduleNamespace);
             for (WrappedElement e : wrappedElements) {
                 e.generateDeclarations(headerOutput);
             }
@@ -281,6 +304,7 @@ public class JNIAccessProcessor extends AbstractProcessor {
         StringBuilder implementationOutput = new StringBuilder();
         implementationOutput.append("#include \"").append(generatedHeaderName).append("\"\n");
         implementationOutput.append("\n");
+        ModuleLifecycle.generateModuleLifecycleFunctions(implementationOutput, moduleNamespace, wrappedElements);
         for (WrappedElement e : wrappedElements) {
             e.generateImplementations(implementationOutput);
         }
@@ -338,31 +362,31 @@ public class JNIAccessProcessor extends AbstractProcessor {
         }
     }
 
-    private WrappedElement processConstructor(Element element, boolean performanceCritical) {
+    private WrappedElement processConstructor(Element element, CacheMode cacheMode) {
         TypeElement clazz = (TypeElement) element.getEnclosingElement();
         ExecutableElement ctor = (ExecutableElement) element;
         Types typeUtils = processingEnv.getTypeUtils();
         ConstructorCall call = new ConstructorCall(new AccessedClass(clazz, clazz.asType()), new AccessedMethod(ctor, getParams(ctor)));
 
         if (TypeHelper.isInstanceOf(typeUtils, clazz.asType(), Throwable.class)) {
-            return new ThrowWrapper(typeUtils, performanceCritical, call);
+            return new ThrowWrapper(typeUtils, cacheMode, call);
         } else {
-            return new NewInstanceWrapper(typeUtils, performanceCritical, call);
+            return new NewInstanceWrapper(typeUtils, cacheMode, call);
         }
     }
 
-    private WrappedElement processMethod(Element element, boolean performanceCritical) {
+    private WrappedElement processMethod(Element element, CacheMode cacheMode) {
         Types typeUtils = processingEnv.getTypeUtils();
         TypeElement clazz = (TypeElement) element.getEnclosingElement();
         ExecutableElement method = (ExecutableElement) element;
-        return new MethodCallWrapper(typeUtils, performanceCritical, new AccessedClass(clazz, clazz.asType()), new AccessedMethod(method, getParams(method)));
+        return new MethodCallWrapper(typeUtils, cacheMode, new AccessedClass(clazz, clazz.asType()), new AccessedMethod(method, getParams(method)));
     }
 
-    private WrappedElement processField(Element element, boolean performanceCritical) {
+    private WrappedElement processField(Element element, CacheMode cacheMode) {
         Types typeUtils = processingEnv.getTypeUtils();
         TypeElement clazz = (TypeElement) element.getEnclosingElement();
         VariableElement field = (VariableElement) element;
-        return new FieldWrapper(typeUtils, performanceCritical, new AccessedClass(clazz, clazz.asType()), new AccessedField(field, field.asType()));
+        return new FieldWrapper(typeUtils, cacheMode, new AccessedClass(clazz, clazz.asType()), new AccessedField(field, field.asType()));
     }
 
     private void logError(String s) {

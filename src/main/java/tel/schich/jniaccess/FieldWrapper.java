@@ -34,11 +34,16 @@ public class FieldWrapper extends WrappedElement {
     private final AccessedField field;
     private final List<MethodParam> writeParams;
 
-    public FieldWrapper(Types types, boolean performanceCritical, AccessedClass clazz, AccessedField field) {
-        super(types, performanceCritical);
+    public FieldWrapper(Types types, CacheMode cacheMode, AccessedClass clazz, AccessedField field) {
+        super(types, cacheMode);
         this.clazz = clazz;
         this.field = field;
         writeParams = Collections.singletonList(new MethodParam("value", field.getElement(), field.getType()));
+    }
+
+    @Override
+    public AccessedClass getHostClass() {
+        return clazz;
     }
 
     private void generateReadSig(StringBuilder out) {

@@ -22,16 +22,11 @@
  */
 package tel.schich.jniaccess;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Documents constructors, methods and fields that are being accessed from native code.
- */
-@Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD})
-@Retention(RetentionPolicy.SOURCE)
-public @interface JNIAccess {
-    CacheMode cacheMode() default CacheMode.DEFAULT;
+public enum CacheMode {
+    DEFAULT,
+    NONE,
+    EAGER_PERSISTENT,
+    LAZY_PERSISTENT,
+    EAGER_TEMPORARY,
+    LAZY_TEMPORARY,
 }

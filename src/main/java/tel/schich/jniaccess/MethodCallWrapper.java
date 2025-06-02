@@ -31,10 +31,15 @@ public class MethodCallWrapper extends MethodBackedWrapper {
     private final AccessedClass clazz;
     private final AccessedMethod method;
 
-    public MethodCallWrapper(Types types, boolean performanceCritical, AccessedClass clazz, AccessedMethod method) {
-        super(types, performanceCritical, method);
+    public MethodCallWrapper(Types types, CacheMode cacheMode, AccessedClass clazz, AccessedMethod method) {
+        super(types, cacheMode, method);
         this.clazz = clazz;
         this.method = method;
+    }
+
+    @Override
+    public AccessedClass getHostClass() {
+        return clazz;
     }
 
     @Override

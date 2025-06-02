@@ -30,8 +30,8 @@ public abstract class MethodBackedWrapper extends WrappedElement {
 
     private final AccessedMethod method;
 
-    public MethodBackedWrapper(Types types, boolean performanceCritical, AccessedMethod method) {
-        super(types, performanceCritical);
+    public MethodBackedWrapper(Types types, CacheMode cacheMode, AccessedMethod method) {
+        super(types, cacheMode);
         this.method = method;
     }
 
