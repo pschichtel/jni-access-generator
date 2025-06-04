@@ -80,7 +80,11 @@ public class FieldWrapper extends WrappedElement {
         out.append('\n');
         generateFieldLookup(getTypes(), out, "field", true, "class", field, "    ");
         out.append('\n');
-        out.append("    (*env)->");
+        out.append("    ");
+        if (!set) {
+            out.append("return ");
+        }
+        out.append("(*env)->");
         out.append(set ? "Set" : "Get");
         if (field.isStatic()) {
             out.append("Static");
