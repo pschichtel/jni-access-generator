@@ -41,4 +41,8 @@ public class AccessedClass {
     public TypeMirror getType() {
         return type;
     }
+
+    public String getTypeName() {
+        return TypeHelper.getClassTypeName(element);
+    }
 }

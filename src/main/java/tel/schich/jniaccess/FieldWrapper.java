@@ -41,6 +41,10 @@ public class FieldWrapper extends WrappedElement {
         writeParams = Collections.singletonList(new MethodParam("value", field.getElement(), field.getType()));
     }
 
+    public AccessedField getField() {
+        return field;
+    }
+
     @Override
     public AccessedClass getHostClass() {
         return clazz;
@@ -72,9 +76,9 @@ public class FieldWrapper extends WrappedElement {
 
     private void generateImplBody(StringBuilder out, boolean set) {
         out.append(" {\n");
-        generateClassLookup(out, "class", clazz, "    ");
+        generateClassLookup(out, "class", true, clazz, "    ");
         out.append('\n');
-        generateFieldLookup(getTypes(), out, "field", "class", field, "    ");
+        generateFieldLookup(getTypes(), out, "field", true, "class", field, "    ");
         out.append('\n');
         out.append("    (*env)->");
         out.append(set ? "Set" : "Get");

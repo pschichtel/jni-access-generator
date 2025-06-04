@@ -65,7 +65,7 @@ public class ThrowWrapper extends MethodBackedWrapper {
         if (singleStringParam) {
             generateSig(out, true);
             out.append(" {\n");
-            generateClassLookup(out, "class", constructor.getClazz(), "    ");
+            generateClassLookup(out, "class", true, constructor.getClazz(), "    ");
             out.append('\n');
             out.append("    (*env)->ThrowNew(env, class, ").append(cStringName(params.get(0))).append(");\n");
             out.append("}\n");

@@ -22,7 +22,7 @@
  */
 package tel.schich.jniaccess;
 
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.Element;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -36,13 +36,6 @@ public abstract class GeneratorHelper {
 
     private GeneratorHelper() {
 
-    }
-
-    public static String jniClassNameOf(AccessedClass clazz) {
-        return jniClassNameOf(clazz.getElement());
-    }
-    public static String jniClassNameOf(TypeElement clazz) {
-        return clazz.getQualifiedName().toString().replace('.', '/');
     }
 
     public static void generateFunctionSignature(Types types, StringBuilder out, AccessedMethod method, String functionName, boolean cStrings) {
@@ -214,14 +207,20 @@ public abstract class GeneratorHelper {
         return functionName(prefix, clazz) + "_" + name;
     }
 
-    public static void generateClassLookup(StringBuilder out, String var, AccessedClass clazz, String indention) {
-        out.append(indention).append("jclass ").append(var).append(" = (*env)->FindClass(env, \"").append(jniClassNameOf(clazz)).append("\");");
+    public static void generateClassLookup(StringBuilder out, String var, boolean newVar, AccessedClass clazz, String indention) {
+        out.append(indention);
+        if (newVar) {
+            out.append("jclass ");
+        }
+        out.append(var).append(" = (*env)->FindClass(env, \"").append(clazz.getTypeName()).append("\");");
     }
 
-    public static void generateMethodLookup(Types types, StringBuilder out, String var, String classVar, AccessedMethod method, String indention) {
-        out.append(indention)
-                .append("jmethodID ")
-                .append(var).append(" = (*env)->Get");
+    public static void generateMethodLookup(Types types, StringBuilder out, String var, boolean newVar, String classVar, AccessedMethod method, String indention) {
+        out.append(indention);
+        if (newVar) {
+            out.append("jmethodID ");
+        }
+        out.append(var).append(" = (*env)->Get");
         if (method.isStatic()) {
             out.append("Static");
         }
@@ -233,10 +232,12 @@ public abstract class GeneratorHelper {
         out.append("\");");
     }
 
-    public static void generateFieldLookup(Types types, StringBuilder out, String var, String classVar, AccessedField field, String indention) {
-        out.append(indention)
-                .append("jfieldID ")
-                .append(var).append(" = (*env)->Get");
+    public static void generateFieldLookup(Types types, StringBuilder out, String var, boolean newVar, String classVar, AccessedField field, String indention) {
+        out.append(indention);
+        if (newVar) {
+            out.append("jfieldID ");
+        }
+        out.append(var).append(" = (*env)->Get");
         if (field.isStatic()) {
             out.append("Static");
         }
@@ -260,13 +261,40 @@ public abstract class GeneratorHelper {
         wrapper.generateSig(out, false);
         out.append(" {\n");
         final String classSymbol = "class";
-        generateClassLookup(out, classSymbol, ctor.getClazz(), "    ");
+        generateClassLookup(out, classSymbol, true, ctor.getClazz(), "    ");
         out.append('\n');
         AccessedMethod method = ctor.getMethod();
         final String instanceSymbol = "ctor";
-        generateMethodLookup(wrapper.getTypes(), out, instanceSymbol, classSymbol, method, "    ");
+        generateMethodLookup(wrapper.getTypes(), out, instanceSymbol, true, classSymbol, method, "    ");
         out.append('\n');
         use.accept(classSymbol, instanceSymbol);
         out.append("}\n");
+    }
+
+    public static void generateNewGlobalRef(StringBuilder out, String fromSymbol, String toSymbol, String castToType, String indention) {
+        out.append(indention).append(toSymbol).append(" = ");
+        if (castToType != null) {
+            out.append('(').append(castToType).append(") ");
+        }
+        out.append("(*env)->NewGlobalRef(env, ").append(fromSymbol).append(");");
+    }
+
+    public static void generateDeleteGlobalRef(StringBuilder out, String symbol, String indention) {
+        out.append(indention).append("(*env)->DeleteGlobalRef(env, ").append(symbol).append(");");
+    }
+
+    public static void generateDeclaration(StringBuilder out, String type, String symbol, String indention) {
+        out.append(indention).append(type).append(' ').append(symbol).append(";");
+    }
+
+    public static int findIndexInParent(Element element) {
+        int i = 0;
+        for (Element enclosedElement : element.getEnclosingElement().getEnclosedElements()) {
+            if (enclosedElement == element) {
+                return i;
+            }
+            i++;
+        }
+        throw new RuntimeException("Could not find the element in its enclosing element: " + element);
     }
 }

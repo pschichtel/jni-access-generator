@@ -29,12 +29,10 @@ import static tel.schich.jniaccess.GeneratorHelper.*;
 
 public class MethodCallWrapper extends MethodBackedWrapper {
     private final AccessedClass clazz;
-    private final AccessedMethod method;
 
     public MethodCallWrapper(Types types, CacheMode cacheMode, AccessedClass clazz, AccessedMethod method) {
         super(types, cacheMode, method);
         this.clazz = clazz;
-        this.method = method;
     }
 
     @Override
@@ -44,23 +42,20 @@ public class MethodCallWrapper extends MethodBackedWrapper {
 
     @Override
     protected String generateFunctionName() {
-        return GeneratorHelper.functionName("call", clazz, method.getName());
+        return GeneratorHelper.functionName("call", clazz, getMethod().getName());
     }
 
     @Override
     protected void generateImpl(StringBuilder out) {
         generateSig(out, false);
         out.append(" {\n");
-        generateClassLookup(out, "class", clazz, "    ");
+        final String classSymbol = "class";
+        generateClassLookup(out, classSymbol, true, clazz, "    ");
         out.append('\n');
-        out.append("    jmethodID method = (*env)->Get");
-        if (method.isStatic()) {
-            out.append("Static");
-        }
-        out.append("MethodID(env, class, \"");
-        out.append(method.getName()).append("\", \"");
-        generateJniMethodSignature(out, getTypes(), method);
-        out.append("\");\n");
+        final AccessedMethod method = getMethod();
+        final String methodSymbol = "method";
+        GeneratorHelper.generateMethodLookup(getTypes(), out, methodSymbol, true, classSymbol, method, "    ");
+        out.append("\n");
         out.append("    ");
         if (method.getElement().getReturnType().getKind() != TypeKind.VOID) {
             out.append("return ");
@@ -71,8 +66,8 @@ public class MethodCallWrapper extends MethodBackedWrapper {
         }
         out.append(TypeHelper.getJNIHelperType(method.getElement().getReturnType()));
         out.append("Method(env, ");
-        out.append(method.isStatic() ? "class" : "instance");
-        out.append(", method");
+        out.append(method.isStatic() ? classSymbol : "instance");
+        out.append(", ").append(methodSymbol);
         for (MethodParam param : method.getParams()) {
             out.append(", ").append(param.getName());
         }

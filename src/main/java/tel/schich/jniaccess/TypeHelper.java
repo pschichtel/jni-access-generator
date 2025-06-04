@@ -56,6 +56,10 @@ public abstract class TypeHelper {
         return isInstanceOf(typeUtils, type, String.class);
     }
 
+    static String getClassTypeName(TypeElement elem) {
+        return elem.getQualifiedName().toString().replace('.', '/');
+    }
+
     static String getJNIType(Types typeUtils, TypeMirror type) {
         switch (type.getKind()) {
             case BOOLEAN:
@@ -77,8 +81,7 @@ public abstract class TypeHelper {
             case VOID:
                 return "V";
             case DECLARED:
-                TypeElement elem = (TypeElement) typeUtils.asElement(type);
-                return "L" + elem.getQualifiedName().toString().replace('.', '/') + ";";
+                return "L" + getClassTypeName((TypeElement) typeUtils.asElement(type)) + ";";
             case ARRAY:
                 return "[" + getJNIType(typeUtils, ((ArrayType) type).getComponentType());
             default:

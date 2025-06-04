@@ -35,6 +35,10 @@ public abstract class MethodBackedWrapper extends WrappedElement {
         this.method = method;
     }
 
+    public AccessedMethod getMethod() {
+        return method;
+    }
+
     protected abstract String generateFunctionName();
 
     protected void generateSig(StringBuilder out, boolean cStrings) {
