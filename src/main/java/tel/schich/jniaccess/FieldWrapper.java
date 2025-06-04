@@ -56,9 +56,9 @@ public class FieldWrapper extends WrappedElement {
         generateFunctionSignature(getTypes(), out, name, field.getType(), !field.isStatic(), Collections.emptyList(), false);
     }
 
-    private void generateReadImpl(StringBuilder out) {
+    private void generateReadImpl(StringBuilder out, String moduleNamespace) {
         generateReadSig(out);
-        generateImplBody(out, false);
+        generateImplBody(out, false, moduleNamespace);
     }
 
     private String generateWriteFunctionName() {
@@ -69,16 +69,28 @@ public class FieldWrapper extends WrappedElement {
         generateFunctionSignature(getTypes(), out, generateWriteFunctionName(), TypeHelper.getVoid(getTypes()), !field.isStatic(), writeParams, cStrings);
     }
 
-    private void generateWriteImpl(StringBuilder out) {
+    private void generateWriteImpl(StringBuilder out, String moduleNamespace) {
         generateWriteSig(out, false);
-        generateImplBody(out, true);
+        generateImplBody(out, true, moduleNamespace);
     }
 
-    private void generateImplBody(StringBuilder out, boolean set) {
+    private void generateImplBody(StringBuilder out, boolean set, String moduleNamespace) {
         out.append(" {\n");
-        generateClassLookup(out, "class", true, clazz, "    ");
-        out.append('\n');
-        generateFieldLookup(getTypes(), out, "field", true, "class", field, "    ");
+        final String classSymbol = "class";
+        final String fieldSymbol = "field";
+        if (getCacheMode() == CacheMode.EAGER_PERSISTENT) {
+            if (field.isStatic()) {
+                out.append("    ");
+                generateClassAssignment(out, classSymbol, getHostClass(), moduleNamespace);
+                out.append('\n');
+            }
+            out.append("    ");
+            generateFieldAssignment(out, fieldSymbol, field, moduleNamespace);
+        } else {
+            generateClassLookup(out, classSymbol, true, clazz, "    ");
+            out.append('\n');
+            generateFieldLookup(getTypes(), out, fieldSymbol, true, classSymbol, field, "    ");
+        }
         out.append('\n');
         out.append("    ");
         if (!set) {
@@ -91,8 +103,9 @@ public class FieldWrapper extends WrappedElement {
         }
         out.append(TypeHelper.getJNIHelperType(field.getType()));
         out.append("Field(env, ");
-        out.append(field.isStatic() ? "class" : "instance");
-        out.append(", field");
+        out.append(field.isStatic() ? classSymbol : "instance");
+        out.append(", ");
+        out.append(fieldSymbol);
         if (set) {
             out.append(", value");
         }
@@ -116,11 +129,11 @@ public class FieldWrapper extends WrappedElement {
     }
 
     @Override
-    public void generateImplementations(StringBuilder out) {
-        generateReadImpl(out);
+    public void generateImplementations(StringBuilder out, String moduleNamespace) {
+        generateReadImpl(out, moduleNamespace);
         out.append("\n");
         if (!field.isFinal()) {
-            generateWriteImpl(out);
+            generateWriteImpl(out, moduleNamespace);
             out.append("\n");
             if (TypeHelper.isString(getTypes(), field.getType())) {
                 generateJStringFunctionOverload(getTypes(), out, generateWriteFunctionName(), !field.isStatic(), TypeHelper.getVoid(getTypes()), writeParams);

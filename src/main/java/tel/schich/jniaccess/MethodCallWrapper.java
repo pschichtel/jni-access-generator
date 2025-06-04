@@ -25,6 +25,8 @@ package tel.schich.jniaccess;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Types;
 
+import java.util.Objects;
+
 import static tel.schich.jniaccess.GeneratorHelper.*;
 
 public class MethodCallWrapper extends MethodBackedWrapper {
@@ -46,15 +48,25 @@ public class MethodCallWrapper extends MethodBackedWrapper {
     }
 
     @Override
-    protected void generateImpl(StringBuilder out) {
+    protected void generateImpl(StringBuilder out, String moduleNamespace) {
         generateSig(out, false);
         out.append(" {\n");
         final String classSymbol = "class";
-        generateClassLookup(out, classSymbol, true, clazz, "    ");
-        out.append('\n');
         final AccessedMethod method = getMethod();
         final String methodSymbol = "method";
-        GeneratorHelper.generateMethodLookup(getTypes(), out, methodSymbol, true, classSymbol, method, "    ");
+        if (Objects.requireNonNull(getCacheMode()) == CacheMode.EAGER_PERSISTENT) {
+            if (method.isStatic()) {
+                out.append("    ");
+                GeneratorHelper.generateClassAssignment(out, classSymbol, getHostClass(), moduleNamespace);
+                out.append('\n');
+            }
+            out.append("    ");
+            GeneratorHelper.generateMethodAssignment(out, methodSymbol, getMethod(), moduleNamespace);
+        } else {
+            generateClassLookup(out, classSymbol, true, clazz, "    ");
+            out.append('\n');
+            generateMethodLookup(getTypes(), out, methodSymbol, true, classSymbol, method, "    ");
+        }
         out.append("\n");
         out.append("    ");
         if (method.getElement().getReturnType().getKind() != TypeKind.VOID) {

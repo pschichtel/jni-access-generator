@@ -45,7 +45,7 @@ public abstract class MethodBackedWrapper extends WrappedElement {
         generateFunctionSignature(getTypes(), out, method, generateFunctionName(), cStrings);
     }
 
-    protected abstract void generateImpl(StringBuilder out);
+    protected abstract void generateImpl(StringBuilder out, String moduleNamespace);
 
     @Override
     public final void generateDeclarations(StringBuilder out) {
@@ -58,8 +58,8 @@ public abstract class MethodBackedWrapper extends WrappedElement {
         out.append("\n");
     }
 
-    protected void generateBaseImplementation(StringBuilder out) {
-        generateImpl(out);
+    protected void generateBaseImplementation(StringBuilder out, String moduleNamespace) {
+        generateImpl(out, moduleNamespace);
         out.append("\n");
     }
 
@@ -71,8 +71,8 @@ public abstract class MethodBackedWrapper extends WrappedElement {
     }
 
     @Override
-    public void generateImplementations(StringBuilder out) {
-        generateBaseImplementation(out);
+    public void generateImplementations(StringBuilder out, String moduleNamespace) {
+        generateBaseImplementation(out, moduleNamespace);
         generateCStringImplementation(out);
         out.append("\n");
     }

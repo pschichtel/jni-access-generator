@@ -29,6 +29,7 @@ import javax.lang.model.util.Types;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public abstract class GeneratorHelper {
     public static final String C_STRING_PARAMETER_PREFIX = "c_";
@@ -257,15 +258,23 @@ public abstract class GeneratorHelper {
         out.append(");");
     }
 
-    public static void generateInstantiatingMethod(StringBuilder out, MethodBackedWrapper wrapper, ConstructorCall ctor, BiConsumer<String, String> use) {
+    public static void generateInstantiatingMethod(StringBuilder out, MethodBackedWrapper wrapper, ConstructorCall ctor, String moduleNamespace, BiConsumer<String, String> use) {
         wrapper.generateSig(out, false);
         out.append(" {\n");
-        final String classSymbol = "class";
-        generateClassLookup(out, classSymbol, true, ctor.getClazz(), "    ");
-        out.append('\n');
         AccessedMethod method = ctor.getMethod();
+        final String classSymbol = "class";
         final String instanceSymbol = "ctor";
-        generateMethodLookup(wrapper.getTypes(), out, instanceSymbol, true, classSymbol, method, "    ");
+        if (wrapper.getCacheMode() == CacheMode.EAGER_PERSISTENT) {
+            out.append("    ");
+            generateClassAssignment(out, classSymbol, ctor.getClazz(), moduleNamespace);
+            out.append('\n');
+            out.append("    ");
+            generateMethodAssignment(out, instanceSymbol, method, moduleNamespace);
+        } else {
+            generateClassLookup(out, classSymbol, true, ctor.getClazz(), "    ");
+            out.append('\n');
+            generateMethodLookup(wrapper.getTypes(), out, instanceSymbol, true, classSymbol, method, "    ");
+        }
         out.append('\n');
         use.accept(classSymbol, instanceSymbol);
         out.append("}\n");
@@ -296,5 +305,29 @@ public abstract class GeneratorHelper {
             i++;
         }
         throw new RuntimeException("Could not find the element in its enclosing element: " + element);
+    }
+
+    private static void generateAssignment(StringBuilder out, String type, String symbol, Consumer<StringBuilder> expression) {
+        out.append(type).append(" ").append(symbol).append(" = ");
+        expression.accept(out);
+        out.append(";");
+    }
+
+    public static void generateClassAssignment(StringBuilder out, String symbol, AccessedClass clazz, String moduleNamespace)  {
+        generateAssignment(out, "jclass", symbol, (it) -> {
+            it.append(ModuleLifecycle.generateClassCacheSymbol(moduleNamespace, clazz));
+        });
+    }
+
+    public static void generateMethodAssignment(StringBuilder out, String symbol, AccessedMethod method, String moduleNamespace)  {
+        generateAssignment(out, "jmethodID", symbol, (it) -> {
+            it.append(ModuleLifecycle.generateMethodCacheSymbol(moduleNamespace, method));
+        });
+    }
+
+    public static void generateFieldAssignment(StringBuilder out, String symbol, AccessedField field, String moduleNamespace)  {
+        generateAssignment(out, "jfieldID", symbol, (it) -> {
+            it.append(ModuleLifecycle.generateFieldCacheSymbol(moduleNamespace, field));
+        });
     }
 }

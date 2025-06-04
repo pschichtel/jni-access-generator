@@ -48,8 +48,8 @@ public class ThrowWrapper extends MethodBackedWrapper {
     }
 
     @Override
-    protected void generateImpl(StringBuilder out) {
-        generateInstantiatingMethod(out, this, constructor, (clazz, instance) -> {
+    protected void generateImpl(StringBuilder out, String moduleNamespace) {
+        generateInstantiatingMethod(out, this, constructor, moduleNamespace, (clazz, instance) -> {
             out.append("    jthrowable t = ");
             generateNewObjectCreation(out, clazz, instance, constructor.getMethod());
             out.append('\n');

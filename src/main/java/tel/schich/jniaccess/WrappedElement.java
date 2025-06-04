@@ -43,5 +43,5 @@ public abstract class WrappedElement {
 
     public abstract AccessedClass getHostClass();
     public abstract void generateDeclarations(StringBuilder out);
-    public abstract void generateImplementations(StringBuilder out);
+    public abstract void generateImplementations(StringBuilder out, String moduleNamespace);
 }

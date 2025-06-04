@@ -306,7 +306,7 @@ public class JNIAccessProcessor extends AbstractProcessor {
         implementationOutput.append("\n");
         ModuleLifecycle.generateModuleLifecycleFunctions(implementationOutput, moduleNamespace, wrappedElements);
         for (WrappedElement e : wrappedElements) {
-            e.generateImplementations(implementationOutput);
+            e.generateImplementations(implementationOutput, moduleNamespace);
         }
         writeNativeContent(implementationOutput, fileName + ".c");
 
