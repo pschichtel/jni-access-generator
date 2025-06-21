@@ -129,7 +129,7 @@ public class ModuleLifecycle {
         for (String ref : globalRefs) {
             GeneratorHelper.generateDeleteGlobalRef(out, ref, "    ");
             out.append("\n");
-            out.append("    ").append(ref).append(" = null;\n");
+            out.append("    ").append(ref).append(" = NULL;\n");
         }
         out.append("}\n\n");
     }
