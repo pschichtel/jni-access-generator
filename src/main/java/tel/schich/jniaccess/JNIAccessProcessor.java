@@ -293,10 +293,12 @@ public class JNIAccessProcessor extends AbstractProcessor {
         final String moduleNamespace = getModuleNamespace();
 
         final CharSequence headerContent = generateHeader(headerGuard, headerOutput -> {
+            ifCpp(headerOutput, o -> o.append("extern \"C\" {\n"));
             ModuleLifecycle.generateModuleLifecycleHeaders(headerOutput, moduleNamespace);
             for (WrappedElement e : wrappedElements) {
                 e.generateDeclarations(headerOutput);
             }
+            ifCpp(headerOutput, o -> o.append("}\n"));
         });
         final String generatedHeaderName = fileName + ".h";
         writeNativeContent(headerContent, generatedHeaderName);
